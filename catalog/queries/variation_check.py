@@ -19,7 +19,8 @@ class MissingVariationsQuery(QueryPlugin):
         product_groups = defaultdict(list)
         
         for listing in listings:
-            if not listing.brand or not listing.item_name:
+            # Use title instead of item_name
+            if not listing.brand or not listing.title:
                 continue
             
             # Skip if already in a variation
@@ -27,7 +28,7 @@ class MissingVariationsQuery(QueryPlugin):
                 continue
             
             # Create a normalized name (strip common variation indicators)
-            normalized_name = self._normalize_product_name(listing.item_name)
+            normalized_name = self._normalize_product_name(listing.title)
             key = f"{listing.brand}::{normalized_name}"
             
             product_groups[key].append(listing)
