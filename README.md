@@ -1,5 +1,8 @@
 # Amazon Catalog CLI
 
+[![PyPI version](https://badge.fury.io/py/amazon-catalog-cli.svg)](https://badge.fury.io/py/amazon-catalog-cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Agent-native CLI for querying Amazon Category Listing Reports**
 
 The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with natural language, automate catalog audits, and integrate with AI workflows.
