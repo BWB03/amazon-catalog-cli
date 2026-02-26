@@ -34,7 +34,7 @@ def list_queries(clr_file):
     
     # Initialize parser and engine
     parser = CLRParser(clr_file)
-    engine = QueryEngine(parser)
+    engine = QueryEngine(parser, include_fbm_duplicates=False)  # Default for list command
     
     # Register all queries
     _register_queries(engine)
@@ -54,7 +54,9 @@ def list_queries(clr_file):
               default='terminal', help='Output format')
 @click.option('--output', 'output_path', type=click.Path(), help='Output file path (for JSON/CSV)')
 @click.option('--show-details/--no-details', default=True, help='Show detailed results')
-def check(query_name, clr_file, output_format, output_path, show_details):
+@click.option('--include-fbm-duplicates', is_flag=True, default=False, 
+              help='Include FBM/MFN duplicates (default: skip them)')
+def check(query_name, clr_file, output_format, output_path, show_details, include_fbm_duplicates):
     """Run a specific query on a CLR file"""
     
     console.print(f"\n[cyan]Loading CLR: {clr_file}[/cyan]")
@@ -62,7 +64,7 @@ def check(query_name, clr_file, output_format, output_path, show_details):
     try:
         # Initialize parser and engine
         parser = CLRParser(clr_file)
-        engine = QueryEngine(parser)
+        engine = QueryEngine(parser, include_fbm_duplicates=include_fbm_duplicates)
         
         # Register all queries
         _register_queries(engine)
@@ -105,7 +107,9 @@ def check(query_name, clr_file, output_format, output_path, show_details):
 @click.option('--output', 'output_path', type=click.Path(), help='Output file path (for JSON/CSV)')
 @click.option('--show-details/--no-details', default=False, 
               help='Show detailed results (default: summary only)')
-def scan(clr_file, output_format, output_path, show_details):
+@click.option('--include-fbm-duplicates', is_flag=True, default=False, 
+              help='Include FBM/MFN duplicates (default: skip them)')
+def scan(clr_file, output_format, output_path, show_details, include_fbm_duplicates):
     """Run all queries on a CLR file"""
     
     console.print(f"\n[cyan]Loading CLR: {clr_file}[/cyan]")
@@ -113,7 +117,7 @@ def scan(clr_file, output_format, output_path, show_details):
     try:
         # Initialize parser and engine
         parser = CLRParser(clr_file)
-        engine = QueryEngine(parser)
+        engine = QueryEngine(parser, include_fbm_duplicates=include_fbm_duplicates)
         
         # Register all queries
         _register_queries(engine)

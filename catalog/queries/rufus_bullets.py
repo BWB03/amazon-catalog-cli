@@ -43,27 +43,99 @@ class RufusBulletsQuery(QueryPlugin):
     
     def execute(self, listings, clr_parser):
         issues = []
+        sku_scores = {}  # Track average scores per SKU for summary
         
         for listing in listings:
-            # Evaluate each bullet point
+            # Evaluate all bullets for this SKU
+            bullet_scores = []
+            sku_bullet_issues = []
+            
             for position, bullet_text in enumerate(listing.bullet_points, start=1):
-                bullet_issues = self._evaluate_bullet(bullet_text, position)
+                bullet_eval = self._evaluate_bullet(bullet_text, position)
+                bullet_scores.append(bullet_eval['score'])
                 
-                if bullet_issues['score'] < 4:  # Only report bullets scoring below 4
-                    issues.append({
+                if bullet_eval['score'] < 4:  # Report individual bullets scoring below 4
+                    sku_bullet_issues.append({
                         'row': listing.row_number,
                         'sku': listing.sku,
                         'field': f'Bullet Point {position}',
                         'severity': 'warning',
-                        'details': f"Bullet {position} scores {bullet_issues['score']}/5: {', '.join(bullet_issues['issues'])}",
+                        'details': f"Bullet {position} scores {bullet_eval['score']}/5: {', '.join(bullet_eval['issues'])}",
                         'product_type': listing.product_type,
-                        'score': bullet_issues['score'],
-                        'bullet_issues': bullet_issues['issues'],
-                        'suggestions': bullet_issues['suggestions'],
+                        'score': bullet_eval['score'],
+                        'bullet_issues': bullet_eval['issues'],
+                        'suggestions': bullet_eval['suggestions'],
                         'bullet_text': bullet_text[:100] + "..." if len(bullet_text) > 100 else bullet_text
                     })
+            
+            # Calculate average score for this SKU
+            avg_score = sum(bullet_scores) / len(bullet_scores) if bullet_scores else 0
+            tier = self._get_score_tier(avg_score)
+            
+            # Store for summary stats
+            sku_scores[listing.sku] = {
+                'avg_score': avg_score,
+                'tier': tier
+            }
+            
+            # If average is below 4, add a summary issue for the SKU
+            if avg_score < 4:
+                issues.append({
+                    'row': listing.row_number,
+                    'sku': listing.sku,
+                    'field': 'Overall RUFUS Score',
+                    'severity': 'info',
+                    'details': f"Average RUFUS score: {avg_score:.1f}/5 - {tier}",
+                    'product_type': listing.product_type,
+                    'avg_score': round(avg_score, 1),
+                    'tier': tier,
+                    'individual_scores': bullet_scores
+                })
+            
+            # Add individual bullet issues
+            issues.extend(sku_bullet_issues)
+        
+        # Add summary stats to metadata (will be printed separately)
+        if sku_scores:
+            issues.append(self._generate_summary(sku_scores))
         
         return issues
+    
+    def _get_score_tier(self, avg_score: float) -> str:
+        """Get tier label for average RUFUS score"""
+        if avg_score >= 4:
+            return "Good — Minor improvements possible"
+        elif avg_score >= 3:
+            return "Fair — Several improvements needed"
+        elif avg_score >= 2:
+            return "Weak — Major rewrite recommended"
+        else:
+            return "Critical — Bullets need complete overhaul"
+    
+    def _generate_summary(self, sku_scores: dict) -> dict:
+        """Generate summary statistics for all SKUs"""
+        avg_all = sum(s['avg_score'] for s in sku_scores.values()) / len(sku_scores)
+        
+        # Count SKUs per tier
+        tier_counts = {}
+        for score_data in sku_scores.values():
+            tier = score_data['tier'].split('—')[0].strip()  # Extract just "Good", "Fair", etc.
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        
+        summary_text = f"Overall catalog RUFUS score: {avg_all:.1f}/5. "
+        summary_text += "Distribution: "
+        summary_text += ", ".join([f"{count} {tier}" for tier, count in sorted(tier_counts.items())])
+        
+        return {
+            'row': 0,
+            'sku': 'SUMMARY',
+            'field': 'RUFUS Summary',
+            'severity': 'info',
+            'details': summary_text,
+            'product_type': '',
+            'avg_catalog_score': round(avg_all, 1),
+            'tier_distribution': tier_counts
+        }
     
     def _evaluate_bullet(self, text: str, position: int) -> dict:
         """

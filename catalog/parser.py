@@ -124,7 +124,7 @@ class CLRParser:
             if 'conditional' in definition['required'].lower()
         ]
     
-    def get_listings(self, skip_parents: bool = True, skip_examples: bool = True) -> List[Listing]:
+    def get_listings(self, skip_parents: bool = True, skip_examples: bool = True, skip_fbm_duplicates: bool = True) -> List[Listing]:
         """
         Extract all listings from CLR
         
@@ -202,7 +202,53 @@ class CLRParser:
             
             listings.append(listing)
         
+        # Filter FBM/MFN duplicates (keep FBA versions)
+        if skip_fbm_duplicates:
+            listings = self._filter_fbm_duplicates(listings)
+        
         return listings
+    
+    def _filter_fbm_duplicates(self, listings: List[Listing]) -> List[Listing]:
+        """
+        Filter out FBM/MFN duplicates of FBA listings.
+        When multiple SKUs have the same item name (title), keep the FBA version.
+        """
+        seen_names = {}
+        filtered = []
+        skipped_count = 0
+        
+        for listing in listings:
+            # Use title as the unique identifier (item name)
+            item_name = listing.title.strip() if listing.title else ""
+            
+            if not item_name:
+                # No title, can't detect duplicates - keep it
+                filtered.append(listing)
+                continue
+            
+            if item_name in seen_names:
+                # Duplicate found
+                existing_sku = seen_names[item_name]
+                
+                # If this one is FBA, replace the existing one
+                if "_FBA_" in listing.sku.upper() or "FBA" in listing.sku.upper():
+                    # Remove the old one, add this FBA version
+                    filtered = [l for l in filtered if l.sku != existing_sku]
+                    filtered.append(listing)
+                    seen_names[item_name] = listing.sku
+                else:
+                    # This is FBM/MFN, skip it
+                    skipped_count += 1
+                    continue
+            else:
+                # First time seeing this item name
+                seen_names[item_name] = listing.sku
+                filtered.append(listing)
+        
+        if skipped_count > 0:
+            print(f"Skipped {skipped_count} FBM/MFN duplicates (keeping FBA versions)")
+        
+        return filtered
     
     def get_product_types(self) -> List[str]:
         """Get unique product types in catalog"""

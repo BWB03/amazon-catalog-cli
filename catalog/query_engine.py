@@ -60,11 +60,12 @@ class QueryPlugin(ABC):
 class QueryEngine:
     """Query orchestration and execution"""
     
-    def __init__(self, clr_parser):
+    def __init__(self, clr_parser, include_fbm_duplicates=False):
         """Initialize with parsed CLR"""
         self.clr_parser = clr_parser
         self.plugins = {}
         self.listings_cache = None
+        self.include_fbm_duplicates = include_fbm_duplicates
     
     def register_query(self, plugin: QueryPlugin):
         """Register a query plugin"""
@@ -101,7 +102,8 @@ class QueryEngine:
         
         # Get listings (cached)
         if not self.listings_cache:
-            self.listings_cache = self.clr_parser.get_listings()
+            skip_fbm = not self.include_fbm_duplicates
+            self.listings_cache = self.clr_parser.get_listings(skip_fbm_duplicates=skip_fbm)
         
         # Execute query
         issues = plugin.execute(self.listings_cache, self.clr_parser)
