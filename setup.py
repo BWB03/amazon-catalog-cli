@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="amazon-catalog-cli",
-    version="1.1.0",
-    author="Brett Wilson",
-    description="Agent-native CLI for querying Amazon Category Listing Reports",
+    version="1.2.0",
+    author="Brett Bohannon",
+    description="Catalog CLI Light - Free CLI for querying Amazon Category Listing Reports",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/BWB03/amazon-catalog-cli",

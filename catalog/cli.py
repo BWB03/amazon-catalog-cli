@@ -21,9 +21,9 @@ from .queries import (
 
 
 @click.group()
-@click.version_option(version="1.0.0")
+@click.version_option(version="1.2.0")
 def cli():
-    """Amazon Catalog CLI - Agent-native CLR query tool"""
+    """Catalog CLI Light - Free CLI for Amazon catalog auditing"""
     pass
 
 

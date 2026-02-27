@@ -1,11 +1,13 @@
-# Amazon Catalog CLI
+# Catalog CLI Light
 
 [![PyPI version](https://badge.fury.io/py/amazon-catalog-cli.svg)](https://badge.fury.io/py/amazon-catalog-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Agent-native CLI for querying Amazon Category Listing Reports**
+**Free CLI for Amazon catalog auditing**
 
 The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with natural language, automate catalog audits, and integrate with AI workflows.
+
+> 💡 **Want more?** Check out [Catalog Audit Pro](https://catalogauditpro.com) for web-based audits, unlimited reports, and client-ready PDFs.
 
 ## Features
 
@@ -259,7 +261,7 @@ MIT License - Free to use, modify, and distribute.
 
 ## Author
 
-Built by Brett Wilson ([@BWB03](https://github.com/BWB03))
+Built by Brett Bohannon ([@BWB03](https://github.com/BWB03))
 
 Amazon consulting veteran, AI automation enthusiast, open-source believer.
 
