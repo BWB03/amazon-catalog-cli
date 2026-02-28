@@ -16,7 +16,9 @@ from .queries import (
     ProhibitedCharsQuery,
     ProductTypeMismatchQuery,
     MissingVariationsQuery,
-    NewAttributesQuery
+    NewAttributesQuery,
+    BulletProhibitedContentQuery,
+    BulletFormattingQuery
 )
 
 
@@ -162,6 +164,8 @@ def _register_queries(engine: QueryEngine):
     engine.register_query(TitleProhibitedCharsQuery())
     engine.register_query(RufusBulletsQuery())
     engine.register_query(ProhibitedCharsQuery())
+    engine.register_query(BulletProhibitedContentQuery())
+    engine.register_query(BulletFormattingQuery())
     engine.register_query(ProductTypeMismatchQuery())
     engine.register_query(MissingVariationsQuery())
     engine.register_query(NewAttributesQuery())

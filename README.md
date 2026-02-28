@@ -56,13 +56,38 @@ catalog list-queries my-catalog.xlsx
 
 ### Content Quality
 - **rufus-bullets** - Score bullet points against Amazon's RUFUS AI framework
+- **bullet-prohibited-content** - Find bullet points with prohibited chars, emojis, claims, or placeholders
+- **bullet-formatting** - Check bullet formatting (capitalization, length, punctuation)
 - **long-titles** - Find titles exceeding 200 characters
 - **title-prohibited-chars** - Find titles with prohibited characters
-- **prohibited-chars** - Find prohibited characters in any field
+- **prohibited-chars** - Find prohibited characters in title/brand (basic validation)
 
 ### Catalog Structure
 - **product-type-mismatch** - Find mismatched product types and item keywords
 - **missing-variations** - Find products that should be variations but aren't
+
+---
+
+### 🆕 Bullet Point Validation (v1.2.0)
+
+The new **bullet-prohibited-content** and **bullet-formatting** queries enforce Amazon's official bullet point requirements:
+
+**Prohibited Content Detected:**
+- Special characters (™, ®, €, …, †, ‡, °, ¢, £, ¥, ©, ±, ~, â)
+- Emojis (☺, ☹, ✅, ❌)
+- Placeholder text ("NA", "n/a", "TBD", "copy pending", "not applicable")
+- Banned claims ("eco-friendly", "anti-microbial", "anti-bacterial")
+- Guarantee language ("full refund", "unconditional guarantee")
+
+**Formatting Rules Enforced:**
+- Must begin with capital letter
+- Must NOT end with punctuation (sentence fragments, not sentences)
+- Length: 10-255 characters
+- Minimum 3 bullets per product recommended
+
+**Note:** Product Description is intentionally excluded (has different content rules).
+
+---
 
 ## Usage Examples
 

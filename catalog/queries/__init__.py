@@ -6,6 +6,7 @@ from .char_validation import ProhibitedCharsQuery
 from .product_type_check import ProductTypeMismatchQuery
 from .variation_check import MissingVariationsQuery
 from .new_attributes import NewAttributesQuery
+from .bullet_validation import BulletProhibitedContentQuery, BulletFormattingQuery
 
 __all__ = [
     'MissingAttributesQuery',
@@ -17,4 +18,6 @@ __all__ = [
     'ProductTypeMismatchQuery',
     'MissingVariationsQuery',
     'NewAttributesQuery',
+    'BulletProhibitedContentQuery',
+    'BulletFormattingQuery',
 ]
