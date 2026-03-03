@@ -228,9 +228,9 @@ class BulletAwarenessQuery(QueryPlugin):
     ]
     
     # Problematic characters (NOT including smart punctuation like em-dash, which is OK)
-    PROBLEMATIC_CHARS = set(""«»‹›"  # Unusual quotes
-                           "×÷≈≠"     # Math symbols
-                           "→←↑↓")    # Arrows
+    PROBLEMATIC_CHARS = set("\u201c\u201d«»‹›"  # Unusual quotes: \u201c \u201d « » ‹ ›
+                           "×÷≈≠"              # Math symbols
+                           "→←↑↓")             # Arrows
     
     def execute(self, listings, clr_parser):
         issues = []
