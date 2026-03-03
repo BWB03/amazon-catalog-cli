@@ -24,7 +24,7 @@ from .queries import (
 
 
 @click.group()
-@click.version_option(version="1.3.0")
+@click.version_option(version="1.3.1")
 def cli():
     """Catalog CLI Light - Free CLI for Amazon catalog auditing"""
     pass

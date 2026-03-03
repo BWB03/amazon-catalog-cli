@@ -2,6 +2,14 @@
 
 All notable changes to Catalog CLI Light will be documented in this file.
 
+## [1.3.1] - 2026-03-03
+
+### Fixed
+- **SyntaxError on import** - Curly quote characters (\u201c \u201d) in `BulletAwarenessQuery.PROBLEMATIC_CHARS` were stored as ASCII double quotes, causing a `SyntaxError: invalid character` on Python 3.14. Fixed by using Unicode escape sequences.
+- **Version sync** - `__init__.py` version now matches `setup.py` and CLI version
+
+---
+
 ## [1.3.0] - 2026-03-03
 
 ### Added
