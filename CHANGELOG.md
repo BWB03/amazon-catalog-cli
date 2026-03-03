@@ -2,6 +2,30 @@
 
 All notable changes to Catalog CLI Light will be documented in this file.
 
+## [1.3.0] - 2026-03-03
+
+### Added
+- **Marketplace detection** - Auto-detects marketplace from CLR (US, CA, UK, DE, etc.)
+  - `marketplace` field in JSON output
+  - `is_us_marketplace` boolean flag
+  - Useful for multi-marketplace workflows
+- **Bullet awareness checks** - New `bullet-awareness` query for soft violations
+  - Detects all caps at beginning (3+ consecutive words)
+  - Flags excessive capitalization (>30% of text)
+  - Identifies problematic special characters (unusual quotes, math symbols, arrows)
+  - New `awareness` severity level - not critical, but worth reviewing
+  
+### Changed
+- JSON output now includes marketplace metadata at top level
+- Query results include marketplace in metadata
+
+### Technical
+- Total queries: 11 → 12
+- Added `CLRParser.get_marketplace()` and `CLRParser.is_us_marketplace()` methods
+- Added `BulletAwarenessQuery` to `catalog/queries/bullet_validation.py`
+
+---
+
 ## [1.2.0] - 2026-02-27
 
 ### Added

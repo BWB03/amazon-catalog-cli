@@ -198,3 +198,85 @@ class BulletFormattingQuery(QueryPlugin):
                 })
         
         return issues
+
+
+class BulletAwarenessQuery(QueryPlugin):
+    """
+    Check bullet points for soft violations - patterns known to cause issues
+    but not officially prohibited by Amazon.
+    
+    Checks for:
+    - All caps at beginning (3+ consecutive words in ALL CAPS)
+    - Excessive caps (>30% of bullet text in CAPS)
+    - Problematic special characters known to cause indexing/display issues:
+      * Unusual quotes: ", ", «, », ‹, ›
+      * Math symbols: ×, ÷, ≈, ≠
+      * Arrows: →, ←, ↑, ↓
+    
+    These are "awareness" level - not critical, but good to review.
+    """
+    
+    name = "bullet-awareness"
+    description = "Check for soft violations in bullets (excessive caps, problematic chars)"
+    
+    BULLET_FIELDS = [
+        'Bullet Point 1',
+        'Bullet Point 2',
+        'Bullet Point 3',
+        'Bullet Point 4',
+        'Bullet Point 5',
+    ]
+    
+    # Problematic characters (NOT including smart punctuation like em-dash, which is OK)
+    PROBLEMATIC_CHARS = set(""«»‹›"  # Unusual quotes
+                           "×÷≈≠"     # Math symbols
+                           "→←↑↓")    # Arrows
+    
+    def execute(self, listings, clr_parser):
+        issues = []
+        
+        for listing in listings:
+            for field_name in self.BULLET_FIELDS:
+                value = listing.all_fields.get(field_name, "")
+                
+                if not value:
+                    continue
+                
+                value_str = str(value).strip()
+                suggestions = []
+                
+                # Check 1: All caps at beginning (3+ consecutive words)
+                words = value_str.split()
+                if len(words) >= 3:
+                    first_three = ' '.join(words[:3])
+                    if first_three.isupper() and len(first_three) > 8:  # Ignore short acronyms
+                        suggestions.append(f"Begins with all caps: '{first_three}...' - Consider sentence case for better readability")
+                
+                # Check 2: Excessive caps (>30% of text)
+                if len(value_str) > 0:
+                    caps_count = sum(1 for c in value_str if c.isupper())
+                    caps_percentage = (caps_count / len(value_str)) * 100
+                    
+                    if caps_percentage > 30:
+                        suggestions.append(f"Excessive capitalization ({caps_percentage:.0f}% of text) - May look like shouting")
+                
+                # Check 3: Problematic special characters
+                found_problematic = set(value_str) & self.PROBLEMATIC_CHARS
+                if found_problematic:
+                    char_list = ', '.join(f"'{c}'" for c in found_problematic)
+                    suggestions.append(f"Problematic characters: {char_list} - May cause indexing/display issues")
+                
+                # If any suggestions, create awareness issue
+                if suggestions:
+                    issues.append({
+                        'row': listing.row_number,
+                        'sku': listing.sku,
+                        'field': field_name,
+                        'severity': 'awareness',  # New severity level
+                        'details': f"{field_name}: {'; '.join(suggestions)}",
+                        'product_type': listing.product_type,
+                        'suggestions': suggestions,
+                        'bullet_text': value_str[:100] + '...' if len(value_str) > 100 else value_str
+                    })
+        
+        return issues

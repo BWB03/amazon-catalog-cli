@@ -18,12 +18,13 @@ from .queries import (
     MissingVariationsQuery,
     NewAttributesQuery,
     BulletProhibitedContentQuery,
-    BulletFormattingQuery
+    BulletFormattingQuery,
+    BulletAwarenessQuery
 )
 
 
 @click.group()
-@click.version_option(version="1.2.0")
+@click.version_option(version="1.3.0")
 def cli():
     """Catalog CLI Light - Free CLI for Amazon catalog auditing"""
     pass
@@ -166,6 +167,7 @@ def _register_queries(engine: QueryEngine):
     engine.register_query(ProhibitedCharsQuery())
     engine.register_query(BulletProhibitedContentQuery())
     engine.register_query(BulletFormattingQuery())
+    engine.register_query(BulletAwarenessQuery())
     engine.register_query(ProductTypeMismatchQuery())
     engine.register_query(MissingVariationsQuery())
     engine.register_query(NewAttributesQuery())

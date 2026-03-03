@@ -117,6 +117,8 @@ class QueryEngine:
             issues=issues,
             metadata={
                 'total_listings': len(self.listings_cache),
+                'marketplace': self.clr_parser.get_marketplace(),
+                'is_us_marketplace': self.clr_parser.is_us_marketplace(),
                 'params': params or {}
             }
         )

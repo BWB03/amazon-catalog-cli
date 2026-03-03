@@ -47,6 +47,51 @@ class CLRParser:
         # Parse structure
         self.headers = self._extract_headers()
         self.field_definitions = self._extract_field_definitions()
+        self.marketplace = self._extract_marketplace()
+        
+    def _extract_marketplace(self) -> str:
+        """
+        Extract marketplace from settings row (row 1).
+        Amazon CLRs contain marketplace info in row 1, typically formatted as:
+        "Country:US" or similar.
+        
+        Returns:
+            str: Marketplace code (e.g., 'US', 'CA', 'UK', 'DE') or 'US' as default
+        """
+        try:
+            settings_row = self.template_sheet[self.ROW_SETTINGS]
+            
+            # Scan first 10 cells for country/marketplace info
+            for cell in list(settings_row)[:10]:
+                if cell.value:
+                    value = str(cell.value).strip()
+                    
+                    # Look for "Country:XX" pattern
+                    if 'country:' in value.lower():
+                        parts = value.split(':')
+                        if len(parts) == 2:
+                            return parts[1].strip().upper()
+                    
+                    # Look for direct marketplace codes
+                    value_upper = value.upper()
+                    known_marketplaces = ['US', 'CA', 'UK', 'DE', 'FR', 'IT', 'ES', 'JP', 'AU', 'IN', 'MX', 'BR']
+                    if value_upper in known_marketplaces:
+                        return value_upper
+            
+            # Default to US if not found
+            return 'US'
+            
+        except Exception:
+            # If any error, default to US
+            return 'US'
+    
+    def get_marketplace(self) -> str:
+        """Get the marketplace code for this CLR"""
+        return self.marketplace
+    
+    def is_us_marketplace(self) -> bool:
+        """Check if this is a US marketplace CLR"""
+        return self.marketplace == 'US'
         
     def _extract_headers(self) -> Dict[str, int]:
         """Extract column headers and their positions"""

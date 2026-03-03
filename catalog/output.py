@@ -74,8 +74,14 @@ def format_terminal(results: List[QueryResult], show_details: bool = True):
 def format_json(results: List[QueryResult]) -> str:
     """JSON output for agent/script consumption"""
     
+    # Extract marketplace from first result's metadata (all queries share same CLR)
+    marketplace = results[0].metadata.get('marketplace', 'US') if results else 'US'
+    is_us = results[0].metadata.get('is_us_marketplace', True) if results else True
+    
     output = {
         'timestamp': results[0].timestamp if results else None,
+        'marketplace': marketplace,
+        'is_us_marketplace': is_us,
         'total_queries': len(results),
         'total_issues': sum(r.total_issues for r in results),
         'total_affected_skus': sum(r.affected_skus for r in results),
