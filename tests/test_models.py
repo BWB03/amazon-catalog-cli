@@ -34,9 +34,9 @@ class TestScanRequest:
         with pytest.raises(ValidationError):
             ScanRequest(file="../../../etc/passwd")
 
-    def test_rejects_absolute_path(self):
-        with pytest.raises(ValidationError):
-            ScanRequest(file="/etc/passwd")
+    def test_allows_absolute_path(self):
+        req = ScanRequest(file="/Users/someone/report.xlsx")
+        assert req.file == "/Users/someone/report.xlsx"
 
     def test_rejects_bad_query_name(self):
         with pytest.raises(ValidationError):

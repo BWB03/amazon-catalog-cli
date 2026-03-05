@@ -28,13 +28,13 @@ class TestValidateFilePath:
         with pytest.raises(ValidationError, match="Path traversal"):
             validate_file_path("data/../../../etc/passwd")
 
-    def test_rejects_absolute_path(self):
-        with pytest.raises(ValidationError, match="Absolute paths"):
-            validate_file_path("/etc/passwd")
+    def test_allows_absolute_path(self):
+        assert validate_file_path("/Users/someone/report.xlsx") == "/Users/someone/report.xlsx"
 
-    def test_rejects_home_expansion(self):
-        with pytest.raises(ValidationError, match="Home directory"):
-            validate_file_path("~/report.xlsx")
+    def test_expands_home_directory(self):
+        import os
+        result = validate_file_path("~/report.xlsx")
+        assert result == os.path.expanduser("~/report.xlsx")
 
     def test_rejects_null_bytes(self):
         with pytest.raises(ValidationError, match="null bytes"):

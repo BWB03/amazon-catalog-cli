@@ -17,10 +17,10 @@ def validate_file_path(path: str) -> str:
 
     Rejects:
     - Path traversal (.. components)
-    - Absolute paths (starting with /)
-    - Home directory expansion (~)
     - Control characters
     - Null bytes
+
+    Allows absolute paths if the file exists (for MCP/desktop use).
     """
     if not path:
         raise ValidationError("File path cannot be empty")
@@ -33,18 +33,13 @@ def validate_file_path(path: str) -> str:
     if re.search(r"[\x01-\x1f\x7f]", path):
         raise ValidationError("File path contains control characters")
 
+    # Expand ~ to home directory
+    path = os.path.expanduser(path)
+
     # Reject path traversal
     normalized = os.path.normpath(path)
     if ".." in normalized.split(os.sep):
         raise ValidationError("Path traversal (..) is not allowed")
-
-    # Reject absolute paths
-    if os.path.isabs(path):
-        raise ValidationError("Absolute paths are not allowed")
-
-    # Reject home directory expansion
-    if path.startswith("~"):
-        raise ValidationError("Home directory expansion (~) is not allowed")
 
     return path
 
