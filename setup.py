@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="amazon-catalog-cli",
-    version="2.0.0",
+    version="2.0.1",
     author="Brett Bohannon",
     description="Catalog CLI - Agent-native Amazon catalog auditing tool",
     long_description=long_description,

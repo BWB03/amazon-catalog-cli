@@ -30,7 +30,7 @@ def _parse_json_input(json_str: str | None, stdin: bool) -> dict | None:
 
 
 @click.group()
-@click.version_option(version="2.0.0")
+@click.version_option(version="2.0.1")
 def cli():
     """Catalog CLI - Agent-native Amazon catalog auditing tool"""
     pass
