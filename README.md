@@ -1,21 +1,34 @@
-# Catalog CLI Light
+# Catalog CLI
 
 [![PyPI version](https://badge.fury.io/py/amazon-catalog-cli.svg)](https://badge.fury.io/py/amazon-catalog-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Free CLI for Amazon catalog auditing**
+**Agent-native Amazon catalog auditing tool**
 
-The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with natural language, automate catalog audits, and integrate with AI workflows.
+The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with structured input, integrate via MCP server, and automate catalog audits.
 
-> 💡 **Want more?** Check out [Catalog Audit Pro](https://catalogauditpro.com) for web-based audits, unlimited reports, and client-ready PDFs.
+> Want more? Check out [Catalog Audit Pro](https://catalogauditpro.com) for web-based audits, unlimited reports, and client-ready PDFs.
+
+## What's New in v2.0
+
+- **Shared core architecture** - Business logic separated into `catalog/core/`, powering both CLI and MCP
+- **MCP server** - `catalog mcp` launches a stdio MCP server with 4 tools, ready for Claude Desktop and any MCP client
+- **JSON input** - `--json` and `--stdin` flags for structured agent input
+- **Schema introspection** - `catalog schema --format json` returns full request/response schemas
+- **Field masks** - `--fields sku,severity,details` to reduce output size
+- **Pagination** - `--limit` and `--offset` for controlling result size
+- **NDJSON streaming** - `--format ndjson` for line-by-line streaming of large results
+- **Input hardening** - Pydantic validation rejects path traversal, injection, and malformed input
+- **Environment variables** - `CATALOG_CLI_DEFAULT_FORMAT=json` for headless/CI use
+- **Backward compatible** - All v1.x commands work unchanged
 
 ## Features
 
-- 🤖 **Agent-Native** - CLI/JSON output designed for AI agent integration
-- ⚡ **Fast** - Query 1000+ SKU catalogs in seconds
-- 🔌 **Extensible** - Plugin system for custom queries
-- 📊 **Comprehensive** - 9 built-in catalog health checks
-- 🎯 **RUFUS Optimized** - Amazon AI shopping assistant bullet scoring
+- **Agent-Native** - CLI + MCP server as equal citizens, JSON/NDJSON output, schema introspection
+- **Fast** - Query 1000+ SKU catalogs in seconds
+- **Extensible** - Plugin system for custom queries
+- **Comprehensive** - 12 built-in catalog health checks
+- **RUFUS Optimized** - Amazon AI shopping assistant bullet scoring
 
 ## Installation
 
@@ -33,19 +46,62 @@ pip install -e .
 
 ## Quick Start
 
+### For Humans
+
 ```bash
 # Run all catalog checks
 catalog scan my-catalog.xlsx
 
-# Run specific check
-catalog check missing-attributes my-catalog.xlsx
+# Detailed results
+catalog scan my-catalog.xlsx --show-details
 
-# Export results as JSON (for agents)
-catalog scan my-catalog.xlsx --format json --output results.json
+# Run specific check
+catalog check rufus-bullets my-catalog.xlsx
 
 # List available queries
-catalog list-queries my-catalog.xlsx
+catalog list-queries
 ```
+
+### For AI Agents
+
+```bash
+# JSON output with field mask and limit
+catalog scan my-catalog.xlsx --format json --fields sku,severity,details --limit 20
+
+# Structured JSON input
+catalog scan --json '{"file": "my-catalog.xlsx", "queries": ["missing-attributes"], "limit": 10}'
+
+# Piped input
+echo '{"file": "my-catalog.xlsx"}' | catalog scan --stdin --format json
+
+# NDJSON streaming for large results
+catalog scan my-catalog.xlsx --format ndjson
+
+# Schema introspection (discover queries, params, response shapes)
+catalog schema --format json
+```
+
+### MCP Server (for Claude Desktop, CLR Pro, etc.)
+
+```bash
+# Start MCP server
+catalog mcp
+```
+
+Add to Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "catalog": {
+      "command": "catalog",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+MCP tools: `catalog_scan`, `catalog_check`, `catalog_list_queries`, `catalog_schema`
 
 ## Available Queries
 
@@ -58,74 +114,91 @@ catalog list-queries my-catalog.xlsx
 - **rufus-bullets** - Score bullet points against Amazon's RUFUS AI framework
 - **bullet-prohibited-content** - Find bullet points with prohibited chars, emojis, claims, or placeholders
 - **bullet-formatting** - Check bullet formatting (capitalization, length, punctuation)
+- **bullet-awareness** - Soft violations in bullets (excessive caps, problematic chars)
 - **long-titles** - Find titles exceeding 200 characters
 - **title-prohibited-chars** - Find titles with prohibited characters
-- **prohibited-chars** - Find prohibited characters in title/brand (basic validation)
+- **prohibited-chars** - Find prohibited characters in title/brand
 
 ### Catalog Structure
 - **product-type-mismatch** - Find mismatched product types and item keywords
 - **missing-variations** - Find products that should be variations but aren't
 
----
+## CLI Commands
 
-### 🆕 Bullet Point Validation (v1.2.0)
-
-The new **bullet-prohibited-content** and **bullet-formatting** queries enforce Amazon's official bullet point requirements:
-
-**Prohibited Content Detected:**
-- Special characters (™, ®, €, …, †, ‡, °, ¢, £, ¥, ©, ±, ~, â)
-- Emojis (☺, ☹, ✅, ❌)
-- Placeholder text ("NA", "n/a", "TBD", "copy pending", "not applicable")
-- Banned claims ("eco-friendly", "anti-microbial", "anti-bacterial")
-- Guarantee language ("full refund", "unconditional guarantee")
-
-**Formatting Rules Enforced:**
-- Must begin with capital letter
-- Must NOT end with punctuation (sentence fragments, not sentences)
-- Length: 10-255 characters
-- Minimum 3 bullets per product recommended
-
-**Note:** Product Description is intentionally excluded (has different content rules).
-
----
-
-## Usage Examples
-
-### For Humans
+### `catalog scan`
+Run all queries on a CLR file.
 
 ```bash
-# Quick scan with summary
-catalog scan my-catalog.xlsx
+catalog scan <clr-file> [OPTIONS]
 
-# Detailed results
-catalog scan my-catalog.xlsx --show-details
-
-# Check specific issue
-catalog check rufus-bullets my-catalog.xlsx
+Options:
+  --format [terminal|json|csv|ndjson]  Output format (default: terminal)
+  --output PATH                        Output file path
+  --show-details / --no-details        Show detailed results
+  --include-fbm-duplicates             Include FBM/MFN duplicates
+  --json TEXT                          JSON request body
+  --stdin                              Read JSON request from stdin
+  --queries TEXT                       Comma-separated query names
+  --fields TEXT                        Comma-separated field mask
+  --limit INTEGER                      Max issues to return
+  --offset INTEGER                     Skip first N issues
 ```
 
-### For AI Agents
+### `catalog check`
+Run a specific query.
 
 ```bash
-# JSON output for agent parsing
-catalog scan my-catalog.xlsx --format json
+catalog check <query-name> <clr-file> [OPTIONS]
 
-# CSV export for spreadsheet analysis
-catalog scan my-catalog.xlsx --format csv --output audit.csv
-
-# Single query with structured output
-catalog check missing-attributes my-catalog.xlsx --format json
+Options:
+  --format [terminal|json|csv|ndjson]  Output format (default: terminal)
+  --output PATH                        Output file path
+  --show-details / --no-details        Show detailed results
+  --json TEXT                          JSON request body
+  --stdin                              Read JSON request from stdin
+  --fields TEXT                        Comma-separated field mask
+  --limit INTEGER                      Max issues to return
+  --offset INTEGER                     Skip first N issues
 ```
 
-### Example JSON Output
+### `catalog schema`
+Show schema for queries, params, and response shapes.
+
+```bash
+catalog schema [query-name] [OPTIONS]
+
+Options:
+  --format [terminal|json]  Output format
+```
+
+### `catalog list-queries`
+List available queries.
+
+```bash
+catalog list-queries [OPTIONS]
+
+Options:
+  --format [terminal|json]  Output format
+```
+
+### `catalog mcp`
+Start the MCP server (stdio transport).
+
+```bash
+catalog mcp
+```
+
+## Example JSON Output
 
 ```json
 {
-  "timestamp": "2026-02-21T10:30:00Z",
-  "total_queries": 9,
+  "timestamp": "2026-03-05T10:30:00Z",
+  "marketplace": "US",
+  "is_us_marketplace": true,
+  "total_queries": 12,
   "total_issues": 47,
   "total_affected_skus": 23,
-  "queries": [
+  "results": [
     {
       "query_name": "missing-attributes",
       "description": "Find mandatory attributes missing from listings",
@@ -138,7 +211,8 @@ catalog check missing-attributes my-catalog.xlsx --format json
           "field": "brand",
           "severity": "required",
           "details": "Missing required field: brand",
-          "product_type": "HAIR_STYLING_AGENT"
+          "product_type": "HAIR_STYLING_AGENT",
+          "extra": {}
         }
       ]
     }
@@ -146,61 +220,38 @@ catalog check missing-attributes my-catalog.xlsx --format json
 }
 ```
 
-## CLI Commands
-
-### `catalog scan`
-Run all queries on a CLR file.
-
-```bash
-catalog scan <clr-file> [OPTIONS]
-
-Options:
-  --format [terminal|json|csv]  Output format (default: terminal)
-  --output PATH                 Output file path
-  --show-details / --no-details Show detailed results
-```
-
-### `catalog check`
-Run a specific query.
-
-```bash
-catalog check <query-name> <clr-file> [OPTIONS]
-
-Options:
-  --format [terminal|json|csv]  Output format (default: terminal)
-  --output PATH                 Output file path
-  --show-details / --no-details Show detailed results
-```
-
-### `catalog list-queries`
-List available queries.
-
-```bash
-catalog list-queries <clr-file>
-```
-
 ## Agent Integration
 
-This tool is designed for AI agent workflows:
+### Via CLI (subprocess)
 
 ```python
-import subprocess
-import json
+import subprocess, json
 
-# Run scan and parse results
 result = subprocess.run(
-    ['catalog', 'scan', 'my-catalog.xlsx', '--format', 'json'],
-    capture_output=True,
-    text=True
+    ['catalog', 'scan', 'my-catalog.xlsx', '--format', 'json',
+     '--fields', 'sku,severity,details', '--limit', '20'],
+    capture_output=True, text=True
 )
-
 data = json.loads(result.stdout)
-
-# Agent can now process catalog issues
-for query in data['queries']:
-    if query['total_issues'] > 0:
-        print(f"Found {query['total_issues']} issues in {query['query_name']}")
 ```
+
+### Via Python (direct import)
+
+```python
+from catalog.core import execute_scan, ScanRequest
+
+request = ScanRequest(
+    file="my-catalog.xlsx",
+    queries=["missing-attributes", "rufus-bullets"],
+    fields=["sku", "severity", "details"],
+    limit=20,
+)
+response = execute_scan(request)
+```
+
+### Via MCP
+
+Add the MCP server to any MCP client (Claude Desktop, CLR Pro, etc.) and call `catalog_scan`, `catalog_check`, `catalog_list_queries`, or `catalog_schema`.
 
 ## RUFUS Bullet Optimization
 
@@ -215,20 +266,16 @@ Scores 1-5 with actionable suggestions.
 
 ## Extending with Custom Queries
 
-Create a new query plugin:
-
 ```python
 from catalog.query_engine import QueryPlugin
 
 class MyCustomQuery(QueryPlugin):
     name = "my-custom-check"
     description = "My custom catalog check"
-    
+
     def execute(self, listings, clr_parser):
         issues = []
-        
         for listing in listings:
-            # Your logic here
             if some_condition:
                 issues.append({
                     'row': listing.row_number,
@@ -238,22 +285,21 @@ class MyCustomQuery(QueryPlugin):
                     'details': 'Issue description',
                     'product_type': listing.product_type
                 })
-        
         return issues
 ```
 
-Register in `cli.py` and it's instantly available.
-
 ## Requirements
 
-- Python 3.7+
+- Python 3.10+
 - openpyxl
 - click
 - rich
+- pydantic
+- mcp
 
 ## How to Get Your CLR
 
-1. Go to **Amazon Seller Central** → **Catalog** → **Category Listing Report**
+1. Go to **Amazon Seller Central** > **Catalog** > **Category Listing Report**
 2. Click **Generate Report**
 3. Download the `.xlsm` or `.xlsx` file
 4. Run catalog CLI on it
@@ -267,19 +313,6 @@ This is an open-source project. Contributions welcome!
 - Enhance output formats
 - Build integrations
 
-## Roadmap
-
-### v1.1
-- Excel export (formatted like CLR Auditor)
-- Natural language query parsing
-- Query result caching
-
-### v2.0
-- Query composition ("missing attributes AND rufus score <3")
-- Saved query templates
-- Diff mode (compare two CLRs)
-- Watch mode (monitor CLR file for changes)
-
 ## License
 
 MIT License - Free to use, modify, and distribute.
@@ -288,13 +321,12 @@ MIT License - Free to use, modify, and distribute.
 
 Built by Brett Bohannon ([@BWB03](https://github.com/BWB03))
 
-Amazon consulting veteran, AI automation enthusiast, open-source believer.
-
 ## Related Projects
 
+- [amazon-catalog-auditor-skill](https://github.com/BWB03/amazon-catalog-auditor-skill) - OpenClaw skill for agent workflows
 - [clr-auditor](https://github.com/BWB03/clr-auditor) - Original CLR auditing tool
 - [amazon-tool](https://github.com/BWB03/amazon-tool) - Amazon variation creator
 
 ---
 
-**First AI-agent-friendly Amazon catalog tool.** Built for the future of catalog management.
+**Agent-native Amazon catalog tool.** Built for the future of catalog management.
