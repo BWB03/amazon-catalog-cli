@@ -2,6 +2,7 @@
 Output formatters for query results
 """
 
+from __future__ import annotations
 import json
 import csv
 from typing import List
@@ -12,6 +13,31 @@ from .query_engine import QueryResult
 
 
 console = Console()
+
+
+def format_ndjson(response) -> str:
+    """NDJSON output for streaming large scan results."""
+    lines = []
+    for block in response.results:
+        for issue in block.issues:
+            record = {
+                "query": block.query_name,
+                **issue.model_dump(),
+            }
+            lines.append(json.dumps(record))
+    return "\n".join(lines) + "\n" if lines else ""
+
+
+def format_ndjson_check(response) -> str:
+    """NDJSON output for streaming check results."""
+    lines = []
+    for issue in response.issues:
+        record = {
+            "query": response.query_name,
+            **issue.model_dump(),
+        }
+        lines.append(json.dumps(record))
+    return "\n".join(lines) + "\n" if lines else ""
 
 
 def format_terminal(results: List[QueryResult], show_details: bool = True):

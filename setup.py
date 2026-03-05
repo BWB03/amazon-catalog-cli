@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="amazon-catalog-cli",
-    version="1.3.1",
+    version="2.0.0",
     author="Brett Bohannon",
-    description="Catalog CLI Light - Free CLI for querying Amazon Category Listing Reports",
+    description="Catalog CLI - Agent-native Amazon catalog auditing tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/BWB03/amazon-catalog-cli",
@@ -18,20 +18,22 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     install_requires=[
         "openpyxl>=3.0.0",
         "click>=8.0.0",
         "rich>=13.0.0",
+        "pydantic>=2.0.0",
+        "mcp>=1.0.0",
     ],
     entry_points={
         "console_scripts": [
-            "catalog=catalog.cli:cli",
+            "catalog=catalog.surfaces.cli:cli",
         ],
     },
 )
