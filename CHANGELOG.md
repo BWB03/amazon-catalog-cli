@@ -1,6 +1,48 @@
 # Changelog
 
-All notable changes to Catalog CLI Light will be documented in this file.
+All notable changes to Catalog CLI will be documented in this file.
+
+## [2.0.0] - 2026-03-05
+
+### Added
+- **Shared core architecture** - Business logic in `catalog/core/`, powering both CLI and MCP surfaces
+  - `core/engine.py` - Shared entry point (`execute_scan`, `execute_check`, `list_queries`, `get_schema`)
+  - `core/models.py` - Pydantic request/response models (typed contracts for CLI, MCP, and schema generation)
+  - `core/validation.py` - Input hardening (path traversal, control chars, SKU validation)
+  - `core/schema.py` - Schema introspection auto-generated from Pydantic models
+- **MCP server** - `catalog mcp` launches stdio MCP server with 4 tools
+  - `catalog_scan`, `catalog_check`, `catalog_list_queries`, `catalog_schema`
+  - Ready for Claude Desktop, CLR Pro, or any MCP client
+- **JSON input** - `--json` flag and `--stdin` for structured agent input
+  - `catalog scan --json '{"file": "report.xlsx", "queries": ["missing-attributes"], "limit": 10}'`
+  - `echo '{"file": "report.xlsx"}' | catalog scan --stdin --format json`
+- **Schema introspection** - `catalog schema [query_name] --format json`
+  - Returns full request/response JSON schemas, query metadata, and example usage
+- **Field masks** - `--fields sku,severity,details` to reduce output size for agents
+- **Pagination** - `--limit` and `--offset` for controlling result size
+- **NDJSON streaming** - `--format ndjson` for line-by-line JSON output
+- **Environment variables** - `CATALOG_CLI_DEFAULT_FORMAT` for headless/CI use
+- **SKILL.md** - Agent guidance file shipped with the package
+
+### Changed
+- Restructured into `catalog/core/` + `catalog/surfaces/` architecture
+- Entry point moved to `catalog.surfaces.cli:cli` (old `catalog.cli:cli` still works via re-export)
+- Parser and query engine moved to `catalog/core/` (old imports still work via re-export shims)
+- FBM duplicate filter message now goes to stderr (clean stdout for JSON piping)
+- Python minimum version bumped from 3.7 to 3.10
+- Rebranded from "Catalog CLI Light" to "Catalog CLI"
+
+### Added Dependencies
+- `pydantic>=2.0.0` - Request/response models, validation, schema generation
+- `mcp>=1.0.0` - MCP server framework
+
+### Backward Compatibility
+- All v1.x commands work unchanged
+- `catalog scan file.xlsx`, `catalog check query file.xlsx`, `catalog list-queries` all preserved
+- Old import paths (`catalog.parser`, `catalog.query_engine`, `catalog.cli`) re-export from new locations
+- Query plugins unchanged
+
+---
 
 ## [1.3.1] - 2026-03-03
 
