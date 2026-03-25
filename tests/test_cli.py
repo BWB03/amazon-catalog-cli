@@ -43,7 +43,7 @@ class TestListQueries:
         result = runner.invoke(cli, ["list-queries", "--format", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
-        assert len(data) == 12
+        assert len(data) == 13
         assert data[0]["name"]
         assert data[0]["description"]
 

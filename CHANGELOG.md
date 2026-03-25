@@ -2,6 +2,36 @@
 
 All notable changes to Catalog CLI will be documented in this file.
 
+## [2.1.0] - 2026-03-25
+
+### Added
+- **Hijacking detection** - New `hijacking-detection` query catches malicious content injection
+  - Detects adult/sexual content terms injected by hijackers
+  - Flags abusive/offensive language planted to trigger suppression
+  - Identifies sabotage phrases ("do not buy", "scam", "counterfeit", etc.)
+  - Scans titles, bullets, description, and search terms
+  - `critical` severity - immediate action required
+
+### Changed
+- **RUFUS scoring rewrite** - Now evaluates bullets against the 3 core RUFUS questions, not just formatting
+  - "Is this right for me?" — detects target user, lifestyle, and problem state signals
+  - "What is the difference?" — detects differentiators, certifications, unique claims
+  - "How do I use it?" — detects usage instructions, what's in the box, compatibility
+  - New SKU-level coverage check reports which RUFUS questions are unanswered across all bullets
+  - New FAQ-style check flags comma-separated feature dumps ("Stainless steel, BPA-free, 32oz")
+  - Replaces old position-locked checks (bullet 1 = benefit, bullet 2 = audience, bullet 3 = differentiator)
+  - All 5 bullets now get content-quality checks, not just bullets 1-3
+
+### Fixed
+- **RUFUS scoring bug** - Empty bullet points now return score 1 (minimum) instead of 0, keeping all scores in the documented 1-5 range
+
+### Technical
+- Total queries: 12 → 13
+- Added `catalog/queries/hijacking_detection.py`
+- Rewrote `catalog/queries/rufus_bullets.py`
+
+---
+
 ## [2.0.0] - 2026-03-05
 
 ### Added

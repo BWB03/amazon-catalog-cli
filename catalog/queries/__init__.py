@@ -7,6 +7,7 @@ from .product_type_check import ProductTypeMismatchQuery
 from .variation_check import MissingVariationsQuery
 from .new_attributes import NewAttributesQuery
 from .bullet_validation import BulletProhibitedContentQuery, BulletFormattingQuery, BulletAwarenessQuery
+from .hijacking_detection import HijackingDetectionQuery
 
 __all__ = [
     'MissingAttributesQuery',
@@ -21,4 +22,5 @@ __all__ = [
     'BulletProhibitedContentQuery',
     'BulletFormattingQuery',
     'BulletAwarenessQuery',
+    'HijackingDetectionQuery',
 ]

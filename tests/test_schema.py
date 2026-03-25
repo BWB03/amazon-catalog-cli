@@ -6,7 +6,7 @@ from catalog.core.engine import get_schema, list_queries
 class TestSchema:
     def test_get_schema_returns_all_queries(self):
         response = get_schema()
-        assert len(response.queries) == 12
+        assert len(response.queries) == 13
 
     def test_get_schema_has_request_schemas(self):
         response = get_schema()
@@ -33,7 +33,7 @@ class TestSchema:
 class TestListQueries:
     def test_list_all(self):
         queries = list_queries()
-        assert len(queries) == 12
+        assert len(queries) == 13
         names = [q.name for q in queries]
         assert "missing-attributes" in names
         assert "rufus-bullets" in names

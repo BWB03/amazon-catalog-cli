@@ -33,6 +33,7 @@ def _get_all_query_classes():
         BulletProhibitedContentQuery,
         BulletFormattingQuery,
         BulletAwarenessQuery,
+        HijackingDetectionQuery,
     )
     return [
         MissingAttributesQuery,
@@ -47,6 +48,7 @@ def _get_all_query_classes():
         ProductTypeMismatchQuery,
         MissingVariationsQuery,
         NewAttributesQuery,
+        HijackingDetectionQuery,
     ]
 
 
