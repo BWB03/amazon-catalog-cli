@@ -12,7 +12,7 @@ from .validation import validate_file_path, validate_query_name, validate_sku
 
 class ScanRequest(BaseModel):
     """Request model for scanning a CLR file with all/selected queries."""
-    file: str = Field(..., description="Path to CLR file (.xlsx)")
+    file: str = Field(..., description="Path to CLR file (.xlsx or .xlsm)")
     queries: list[str] | None = Field(None, description="Query names to run (None = all)")
     fields: list[str] | None = Field(None, description="Field mask - only return these fields in issues")
     limit: int | None = Field(None, ge=1, description="Max issues to return")
@@ -36,7 +36,7 @@ class ScanRequest(BaseModel):
 class CheckRequest(BaseModel):
     """Request model for running a single query on a CLR file."""
     query: str = Field(..., description="Query name to run")
-    file: str = Field(..., description="Path to CLR file (.xlsx)")
+    file: str = Field(..., description="Path to CLR file (.xlsx or .xlsm)")
     fields: list[str] | None = Field(None, description="Field mask - only return these fields in issues")
     limit: int | None = Field(None, ge=1, description="Max issues to return")
     offset: int | None = Field(None, ge=0, description="Skip first N issues")
