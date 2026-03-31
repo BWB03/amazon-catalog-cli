@@ -7,6 +7,9 @@ import openpyxl
 from typing import Optional, Dict, List
 from dataclasses import dataclass
 
+# Suppress stderr output (set True for MCP stdio transport)
+_quiet = False
+
 
 @dataclass
 class Listing:
@@ -290,7 +293,7 @@ class CLRParser:
                 seen_names[item_name] = listing.sku
                 filtered.append(listing)
         
-        if skipped_count > 0:
+        if skipped_count > 0 and not _quiet:
             import sys
             print(f"Skipped {skipped_count} FBM/MFN duplicates (keeping FBA versions)", file=sys.stderr)
         
