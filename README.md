@@ -320,6 +320,21 @@ class MyCustomQuery(QueryPlugin):
 3. Download the `.xlsm` or `.xlsx` file
 4. Run catalog CLI on it
 
+## Free vs Pro
+
+| | Open Source CLI | Free API | Pro API ($9.99/mo) |
+|---|---|---|---|
+| 13 quality audits | Yes | Yes | Yes |
+| Scans | Unlimited (local) | 2 lifetime | Unlimited |
+| Catalogs stored | — | 1 | Unlimited |
+| Results persistence | — | 7 days | Permanent |
+| API access | — | Yes | Yes |
+| Rate limit | — | 10 req/min | 100 req/min |
+| Claude Code integration | Local MCP | — | Hosted MCP |
+| Variation Creator | — | — | Coming soon |
+
+**[Get started at catalogcli.com](https://catalogcli.com)** | **[API Docs](https://api.catalogcli.com/docs)**
+
 ## Contributing
 
 This is an open-source project. Contributions welcome!
