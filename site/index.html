@@ -34,6 +34,53 @@
     </div>
   </div>
 
+  <!-- Get Started -->
+  <section>
+    <div class="container">
+      <h2>Get Started</h2>
+      <p style="text-align: center; color: var(--text-dim); margin-bottom: 32px;">
+        Choose your path based on your comfort level.
+      </p>
+      <div class="ways-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="way-card get-started-card">
+          <div class="step-number">1</div>
+          <h3>Non-Technical <span class="badge badge-free">Easiest</span></h3>
+          <p class="step-subtitle">Use Claude Code as your guide</p>
+          <ol class="steps-list">
+            <li>Install <a href="https://claude.ai/download" target="_blank">Claude Code</a> (Anthropic's coding tool)</li>
+            <li>Open Claude Code and say:<br><em>"Install the amazon-catalog-cli package and set it up as an MCP server"</em></li>
+            <li>Then say:<br><em>"Scan my-catalog.xlsx and explain the issues"</em></li>
+          </ol>
+          <p class="step-note">Claude Code runs the install for you and walks you through everything in plain English.</p>
+        </div>
+        <div class="way-card get-started-card">
+          <div class="step-number">2</div>
+          <h3>Power User <span class="badge badge-free">Free</span></h3>
+          <p class="step-subtitle">Run audits from your terminal</p>
+          <ol class="steps-list">
+            <li>Install: <code>pip install amazon-catalog-cli</code></li>
+            <li>Download your CLR from Seller Central</li>
+            <li>Run: <code>catalog scan my-catalog.xlsx</code></li>
+            <li>Review results with color-coded severity</li>
+          </ol>
+          <p class="step-note">Full control. Rich terminal output. Export to JSON or CSV.</p>
+        </div>
+        <div class="way-card get-started-card">
+          <div class="step-number">3</div>
+          <h3>Developer / Agency <span class="badge badge-pro">Pro</span></h3>
+          <p class="step-subtitle">Integrate into your tools</p>
+          <ol class="steps-list">
+            <li>Register: <code>POST api.catalogcli.com/v1/auth/register</code></li>
+            <li>Upload CLR via API</li>
+            <li>Run scans programmatically</li>
+            <li>Build dashboards, automations, client reports</li>
+          </ol>
+          <p class="step-note">Persistent storage. Unlimited scans. $9.99/mo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- What It Checks -->
   <section>
     <div class="container">
@@ -259,6 +306,18 @@ Recommend starting with the hijacking cases — those need immediate attention.<
     </div>
   </section>
 
+  <!-- Need Help -->
+  <section style="border-top: none; padding: 40px 0 0;">
+    <div class="container" style="text-align: center;">
+      <h2>Need Help Getting Started?</h2>
+      <p style="color: var(--text-dim); margin-bottom: 24px;">
+        Not sure which option is right for you? Want a walkthrough for your team?
+      </p>
+      <a href="mailto:brett@voartex.com?subject=Catalog%20CLI%20-%20Getting%20Started" class="btn btn-primary">Book a Demo</a>
+      <a href="https://github.com/BWB03/amazon-catalog-cli/issues" class="btn btn-secondary">Ask a Question</a>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
     <div class="container">
@@ -266,6 +325,7 @@ Recommend starting with the hijacking cases — those need immediate attention.<
         <a href="https://github.com/BWB03/amazon-catalog-cli">GitHub</a>
         <a href="https://pypi.org/project/amazon-catalog-cli/">PyPI</a>
         <a href="https://api.catalogcli.com/docs">API Docs</a>
+        <a href="mailto:brett@voartex.com">Contact</a>
       </div>
       <p>MIT License &middot; Built by Brett Bohannon</p>
     </div>
