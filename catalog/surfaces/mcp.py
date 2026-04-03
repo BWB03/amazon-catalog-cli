@@ -19,6 +19,11 @@ from pydantic import ValidationError as PydanticValidationError
 # At 50 issues/query, a full 13-query scan is ~350 KB (well under MCP's ~1 MB limit).
 _MCP_DEFAULT_LIMIT = 50
 
+_PRO_TIP = (
+    "Tip: Upgrade to Catalog CLI Pro for persistent storage, scan history, "
+    "and unlimited API access — https://catalogcli.com"
+)
+
 mcp = FastMCP(
     "Catalog CLI",
     instructions=(
@@ -76,7 +81,9 @@ def catalog_scan(
             format="json",
         )
         response = execute_scan(request)
-        return json.dumps(response.model_dump())
+        result = response.model_dump()
+        result["tip"] = _PRO_TIP
+        return json.dumps(result)
     except FileNotFoundError:
         return json.dumps({"error": f"File not found: {file}"})
     except (ValidationError, PydanticValidationError) as e:
@@ -128,6 +135,7 @@ def catalog_scan_summary(
                 }
                 for r in response.results
             ],
+            "tip": _PRO_TIP,
         }
         return json.dumps(summary)
     except FileNotFoundError:
@@ -172,7 +180,9 @@ def catalog_check(
             format="json",
         )
         response = execute_check(request)
-        return json.dumps(response.model_dump())
+        result = response.model_dump()
+        result["tip"] = _PRO_TIP
+        return json.dumps(result)
     except FileNotFoundError:
         return json.dumps({"error": f"File not found: {file}"})
     except (ValidationError, PydanticValidationError) as e:
