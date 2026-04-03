@@ -61,6 +61,14 @@ catalog schema missing-attributes --format json
 | `missing-variations` | Products that might be missing variation relationships |
 | `new-attributes` | Template attributes not being used |
 
+## Claude Code setup
+
+One-command setup for Claude Code:
+```bash
+catalog setup-claude            # Free (local MCP)
+catalog setup-claude --pro --api-key KEY  # Pro (hosted API)
+```
+
 ## MCP server
 
 Add to Claude Desktop config:

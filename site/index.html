@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalog CLI - Amazon Catalog Auditing Tool</title>
+  <meta name="description" content="Agent-native Amazon catalog auditing tool. 13 quality checks for your listings. Run locally, integrate with AI agents, or use the hosted API.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="container">
+      <h1>Catalog CLI</h1>
+      <p class="tagline">
+        Agent-native Amazon catalog auditing tool. 13 quality checks for your listings.
+        Run locally, integrate with AI agents, or use our hosted API.
+      </p>
+
+      <div class="install-block" onclick="navigator.clipboard.writeText('pip install amazon-catalog-cli')">
+        <code>pip install amazon-catalog-cli</code>
+        <div class="copy-hint">click to copy</div>
+      </div>
+
+      <div class="usage-example">
+        $ catalog scan my-catalog.xlsx
+      </div>
+
+      <div class="cta-row">
+        <a href="https://github.com/BWB03/amazon-catalog-cli" class="btn btn-secondary">GitHub</a>
+        <a href="https://api.catalogcli.com/docs" class="btn btn-primary">API Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- What It Checks -->
+  <section>
+    <div class="container">
+      <h2>What It Checks</h2>
+
+      <div class="checks-group">
+        <h3>Attribute Audits</h3>
+        <ul>
+          <li><strong>missing-attributes</strong> &mdash; Required fields that are empty</li>
+          <li><strong>missing-any-attributes</strong> &mdash; All missing fields (required + conditional)</li>
+          <li><strong>new-attributes</strong> &mdash; Template fields you're not using</li>
+        </ul>
+      </div>
+
+      <div class="checks-group">
+        <h3>Content Quality</h3>
+        <ul>
+          <li><strong>rufus-bullets</strong> &mdash; Score bullets against Amazon's RUFUS AI framework</li>
+          <li><strong>bullet-prohibited-content</strong> &mdash; Prohibited chars, emojis, claims</li>
+          <li><strong>bullet-formatting</strong> &mdash; Length, caps, punctuation checks</li>
+          <li><strong>bullet-awareness</strong> &mdash; Soft violations and style issues</li>
+          <li><strong>long-titles</strong> &mdash; Titles exceeding 200 characters</li>
+          <li><strong>title-prohibited-chars</strong> &mdash; Prohibited characters in titles</li>
+          <li><strong>prohibited-chars</strong> &mdash; Prohibited chars in title/brand</li>
+          <li><strong>hijacking-detection</strong> &mdash; Detect potential catalog hijacking</li>
+        </ul>
+      </div>
+
+      <div class="checks-group">
+        <h3>Catalog Structure</h3>
+        <ul>
+          <li><strong>product-type-mismatch</strong> &mdash; Product type vs item type mismatches</li>
+          <li><strong>missing-variations</strong> &mdash; Products that should be grouped as variations</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Four Ways to Use -->
+  <section>
+    <div class="container">
+      <h2>Four Ways to Use</h2>
+      <div class="ways-grid">
+        <div class="way-card">
+          <h3>CLI <span class="badge badge-free">Free</span></h3>
+          <code>catalog scan my-catalog.xlsx</code>
+          <p>Run audits locally from your terminal. Rich output with severity-coded tables.</p>
+        </div>
+        <div class="way-card">
+          <h3>Python <span class="badge badge-free">Free</span></h3>
+          <code>from catalog.core import execute_scan</code>
+          <p>Import directly into your Python scripts and automation pipelines.</p>
+        </div>
+        <div class="way-card">
+          <h3>Claude Code <span class="badge badge-free">Free</span> <span class="badge badge-pro">Pro</span></h3>
+          <code>catalog setup-claude</code>
+          <p>Use natural language to audit catalogs. Free locally, or Pro for hosted API with persistent storage.</p>
+        </div>
+        <div class="way-card">
+          <h3>Hosted API <span class="badge badge-pro">Pro</span></h3>
+          <code>POST api.catalogcli.com/v1/catalogs</code>
+          <p>Persistent storage, unlimited scans, API access for your tools and dashboards.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section>
+    <div class="container">
+      <h2>Pricing</h2>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Open Source CLI</th>
+            <th>Free API</th>
+            <th class="pro-col">Pro API</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="price-row">
+            <td></td>
+            <td>Free forever</td>
+            <td>Free forever</td>
+            <td class="pro-col">$9.99/mo</td>
+          </tr>
+          <tr>
+            <td>13 quality audits</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+            <td class="pro-col check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Scans</td>
+            <td>Unlimited (local)</td>
+            <td>2 lifetime</td>
+            <td class="pro-col">Unlimited</td>
+          </tr>
+          <tr>
+            <td>Catalogs stored</td>
+            <td>&mdash;</td>
+            <td>1</td>
+            <td class="pro-col">Unlimited</td>
+          </tr>
+          <tr>
+            <td>Results persistence</td>
+            <td>&mdash;</td>
+            <td>7 days</td>
+            <td class="pro-col">Permanent</td>
+          </tr>
+          <tr>
+            <td>API access</td>
+            <td>&mdash;</td>
+            <td class="check">&#10003;</td>
+            <td class="pro-col check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Rate limit</td>
+            <td>&mdash;</td>
+            <td>10 req/min</td>
+            <td class="pro-col">100 req/min</td>
+          </tr>
+          <tr>
+            <td>Variation Creator</td>
+            <td>&mdash;</td>
+            <td>&mdash;</td>
+            <td class="pro-col">Coming soon</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Claude Code Integration -->
+  <section class="claude-section">
+    <div class="container">
+      <h2>Claude Code Integration</h2>
+      <p style="text-align: center; color: var(--text-dim); margin-bottom: 24px;">
+        Use natural language to audit your Amazon catalogs. One command to set up.
+      </p>
+
+      <div style="text-align: center;">
+        <div class="code-inline">catalog setup-claude</div>
+        <span style="color: var(--text-dim); margin: 0 12px;">or</span>
+        <div class="code-inline">catalog setup-claude --pro --api-key YOUR_KEY</div>
+      </div>
+
+      <div class="demo">
+        <div class="prompt"><strong>You:</strong> Scan my-catalog.xlsx and tell me the biggest issues</div>
+        <div class="response">Found 29,902 issues across 164 SKUs. Top concerns:
+  - 847 required attributes missing (brands, product types)
+  - 2,140 bullet points scored below 3/5 on RUFUS framework
+  - 12 potential hijacking cases detected
+
+Recommend starting with the hijacking cases — those need immediate attention.</div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <div class="security-grid">
+          <div class="security-card">
+            <h3>Free (Local)</h3>
+            <p>MCP server runs on your machine. Claude Code calls the CLI directly. Your CLR files never leave your computer.</p>
+          </div>
+          <div class="security-card">
+            <h3>Pro (Hosted API)</h3>
+            <p>Claude Code talks to api.catalogcli.com. Persistent storage, scan history, unlimited catalogs — all through natural language.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section>
+    <div class="container">
+      <h2>Security</h2>
+      <div class="security-grid">
+        <div class="security-card">
+          <h3>Open Source CLI</h3>
+          <p>Your data stays local. The CLI processes everything on your machine. No data leaves your computer. No accounts, no tracking.</p>
+        </div>
+        <div class="security-card">
+          <h3>Pro API Storage</h3>
+          <p>CLR files are stored in Cloudflare R2 — encrypted at rest, zero-egress architecture. Files are only accessible via your API key. Delete your data anytime through the API.</p>
+        </div>
+      </div>
+      <p style="text-align: center; color: var(--text-dim); margin-top: 24px; font-size: 0.9rem;">
+        Input validation includes path traversal protection, injection prevention, and Pydantic schema enforcement on all inputs.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <div class="container">
+      <h2>FAQ</h2>
+
+      <div class="faq-item">
+        <h3>What is a CLR?</h3>
+        <p>A Category Listing Report is Amazon's official bulk product data export. It contains all your listing fields — titles, bullets, attributes, variations, and more. Download it from Seller Central under Inventory > Category Listing Report.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Is this free?</h3>
+        <p>The CLI is free and open source (MIT license). The hosted API has a free tier (2 scans) and a Pro tier ($9.99/mo) for unlimited access with persistent storage.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Does this work with AI agents?</h3>
+        <p>Yes. Catalog CLI was designed agent-first. It includes an MCP server for Claude Code and Claude Desktop, JSON output for automation, schema introspection, and field masking for efficient context usage.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>What marketplaces are supported?</h3>
+        <p>Any Amazon marketplace that uses Category Listing Reports. The tool auto-detects the marketplace from the CLR file headers.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Can I add custom checks?</h3>
+        <p>Yes. The plugin architecture makes it easy to add new queries. Create a new Python file in the queries directory implementing the QueryPlugin interface.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="https://github.com/BWB03/amazon-catalog-cli">GitHub</a>
+        <a href="https://pypi.org/project/amazon-catalog-cli/">PyPI</a>
+        <a href="https://api.catalogcli.com/docs">API Docs</a>
+      </div>
+      <p>MIT License &middot; Built by Brett Bohannon</p>
+    </div>
+  </footer>
+
+</body>
+</html>

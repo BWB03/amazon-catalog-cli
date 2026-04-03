@@ -199,6 +199,86 @@ def mcp():
     run_mcp_server()
 
 
+@cli.command("setup-claude")
+@click.option("--pro", is_flag=True, default=False,
+              help="Configure hosted API MCP (Pro) instead of local")
+@click.option("--api-key", type=str, default=None,
+              help="Your Catalog API key (required with --pro)")
+@click.option("--project", is_flag=True, default=False,
+              help="Write to .mcp.json in current directory instead of global settings")
+@click.option("--dry-run", is_flag=True, default=False,
+              help="Show what would be written without making changes")
+def setup_claude(pro, api_key, project, dry_run):
+    """Configure Claude Code to use Catalog CLI as an MCP tool server.
+
+    \b
+    Two modes:
+      catalog setup-claude          Local MCP (free, data stays on your machine)
+      catalog setup-claude --pro    Hosted API MCP (Pro, persistent storage + unlimited scans)
+    """
+    from pathlib import Path
+
+    if pro and not api_key:
+        raise click.UsageError("--api-key is required with --pro. Get one at https://api.catalogcli.com/docs")
+
+    # Build MCP config
+    if pro:
+        server_name = "catalog-pro"
+        mcp_config = {
+            "command": "catalog",
+            "args": ["mcp", "--api"],
+            "env": {"CATALOG_API_KEY": api_key},
+        }
+    else:
+        server_name = "catalog"
+        mcp_config = {
+            "command": "catalog",
+            "args": ["mcp"],
+        }
+
+    # Determine config file path
+    if project:
+        config_path = Path.cwd() / ".mcp.json"
+    else:
+        config_path = Path.home() / ".claude" / "settings.json"
+
+    # Read existing config
+    if config_path.exists():
+        try:
+            config = json_mod.loads(config_path.read_text())
+        except (json_mod.JSONDecodeError, OSError):
+            config = {}
+    else:
+        config = {}
+
+    # Check if already configured
+    existing = config.get("mcpServers", {}).get(server_name)
+    if existing == mcp_config:
+        console.print(f"[green]Already configured:[/green] {server_name} in {config_path}")
+        return
+
+    # Merge config
+    if "mcpServers" not in config:
+        config["mcpServers"] = {}
+    config["mcpServers"][server_name] = mcp_config
+
+    if dry_run:
+        console.print(f"[bold]Would write to:[/bold] {config_path}\n")
+        console.print(json_mod.dumps(config, indent=2))
+        return
+
+    # Write config
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(json_mod.dumps(config, indent=2) + "\n")
+
+    mode = "Pro (hosted API)" if pro else "Local (free)"
+    console.print(f"\n[green]Configured Claude Code MCP server ({mode})[/green]")
+    console.print(f"  Config: {config_path}")
+    console.print(f"  Server: {server_name}\n")
+    console.print("[bold]Restart Claude Code, then try:[/bold]")
+    console.print('  "Scan my-catalog.xlsx and tell me the biggest issues"\n')
+
+
 # --- Output helpers ---
 
 def _default_format() -> str:

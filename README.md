@@ -7,7 +7,7 @@
 
 The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with structured input, integrate via MCP server, and automate catalog audits.
 
-> Want more? Check out [Catalog Audit Pro](https://catalogauditpro.com) for web-based audits, unlimited reports, and client-ready PDFs.
+> **Hosted API available** at [api.catalogcli.com](https://api.catalogcli.com/docs) — persistent storage, unlimited scans, and API access for $9.99/mo. [Learn more](https://catalogcli.com)
 
 ## What's New in v2.0
 
@@ -187,6 +187,22 @@ Start the MCP server (stdio transport).
 ```bash
 catalog mcp
 ```
+
+### `catalog setup-claude`
+Configure Claude Code to use Catalog CLI as an MCP tool server.
+
+```bash
+# Free (local) — data stays on your machine
+catalog setup-claude
+
+# Pro (hosted API) — persistent storage, unlimited scans
+catalog setup-claude --pro --api-key YOUR_KEY
+
+# Per-project instead of global
+catalog setup-claude --project
+```
+
+After setup, restart Claude Code and try: *"Scan my-catalog.xlsx and tell me the biggest issues"*
 
 ## Example JSON Output
 

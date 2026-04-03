@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amazon-catalog-cli"
+version = "2.1.1"
+description = "Catalog CLI - Agent-native Amazon catalog auditing tool"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Brett Bohannon" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "openpyxl>=3.0.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "mcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "pydantic-settings>=2.5.0",
+    "python-multipart>=0.0.9",
+    "boto3>=1.35.0",
+    "email-validator>=2.0.0",
+    "aiofiles>=24.0.0",
+    "stripe>=11.0.0",
+    "redis[hiredis]>=5.0.0",
+]
+
+[project.urls]
+Homepage = "https://catalogcli.com"
+Repository = "https://github.com/BWB03/amazon-catalog-cli"
+
+[project.scripts]
+catalog = "catalog.surfaces.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["catalog*"]
+exclude = ["api*", "tests*", "site*"]
