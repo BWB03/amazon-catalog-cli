@@ -49,6 +49,7 @@ class CLRParser:
         
         # Parse structure
         self.headers = self._extract_headers()
+        self._field_id_to_display = self._build_field_id_map()
         self.field_definitions = self._extract_field_definitions()
         self.marketplace = self._extract_marketplace()
         
@@ -107,6 +108,30 @@ class CLRParser:
         
         return headers
     
+    def _build_field_id_map(self) -> Dict[str, str]:
+        """Build a mapping from Row 5 field IDs to Row 4 display names.
+
+        CLR files have:
+          Row 4: Display names (e.g., 'Item Name', 'Brand Name')
+          Row 5: Field IDs (e.g., 'item_name[marketplace_id=...]#1.value')
+
+        Data Definitions uses field IDs, but all_fields uses display names.
+        This map lets us translate between them.
+        """
+        field_id_map = {}
+        try:
+            header_row = self.template_sheet[self.ROW_COL_HEADERS]
+            field_id_row = self.template_sheet[self.ROW_FIELD_IDS]
+
+            for header_cell, field_id_cell in zip(header_row, field_id_row):
+                if header_cell.value and field_id_cell.value:
+                    field_id = str(field_id_cell.value).strip()
+                    display_name = str(header_cell.value).strip()
+                    field_id_map[field_id] = display_name
+        except Exception:
+            pass
+        return field_id_map
+
     def _extract_field_definitions(self) -> Dict[str, Dict]:
         """Extract field definitions from Data Definitions sheet"""
         definitions = {}
@@ -156,21 +181,41 @@ class CLRParser:
         
         return definitions
     
+    def _resolve_field_name(self, field_id: str) -> Optional[str]:
+        """Resolve a field ID to its display name.
+
+        If the field ID matches a display name directly, return it.
+        Otherwise look it up in the field_id_to_display map.
+        Returns None if the field doesn't exist in this CLR's columns.
+        """
+        # Direct match (field ID is already a display name)
+        if field_id in self.headers:
+            return field_id
+        # Map from field ID to display name
+        display = self._field_id_to_display.get(field_id)
+        if display and display in self.headers:
+            return display
+        return None
+
     def get_required_fields(self) -> List[str]:
-        """Get list of required field names"""
-        return [
-            field_name 
-            for field_name, definition in self.field_definitions.items()
-            if definition['required'] == 'required'
-        ]
-    
+        """Get list of required field display names that exist in this CLR."""
+        fields = []
+        for field_name, definition in self.field_definitions.items():
+            if definition['required'] == 'required':
+                resolved = self._resolve_field_name(field_name)
+                if resolved:
+                    fields.append(resolved)
+        return fields
+
     def get_conditional_fields(self) -> List[str]:
-        """Get list of conditionally required field names"""
-        return [
-            field_name 
-            for field_name, definition in self.field_definitions.items()
-            if 'conditional' in definition['required'].lower()
-        ]
+        """Get list of conditionally required field display names that exist in this CLR."""
+        fields = []
+        for field_name, definition in self.field_definitions.items():
+            if 'conditional' in definition['required'].lower():
+                resolved = self._resolve_field_name(field_name)
+                if resolved:
+                    fields.append(resolved)
+        return fields
     
     def get_listings(self, skip_parents: bool = True, skip_examples: bool = True, skip_fbm_duplicates: bool = True) -> List[Listing]:
         """
@@ -195,12 +240,15 @@ class CLRParser:
         col_parentage = self.headers.get('Parentage', 6)
         col_parent_sku = self.headers.get('Parent SKU', 7)
         
-        # Bullet point columns (typically around columns 43-47)
+        # Bullet point columns — handle both numbered (Bullet Point 1-5) and single (Bullet Point)
         bullet_cols = []
         for i in range(1, 6):
             col_name = f'Bullet Point {i}'
             if col_name in self.headers:
                 bullet_cols.append(self.headers[col_name])
+        # Fallback: single "Bullet Point" column (some CLR formats)
+        if not bullet_cols and 'Bullet Point' in self.headers:
+            bullet_cols.append(self.headers['Bullet Point'])
         
         # Iterate through data rows
         for row_idx, row in enumerate(self.template_sheet.iter_rows(min_row=self.ROW_DATA_START), 
