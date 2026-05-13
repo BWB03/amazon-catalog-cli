@@ -1,7 +1,7 @@
 """Query plugins"""
 from .missing_attributes import MissingAttributesQuery, MissingAnyAttributesQuery
 from .title_checks import LongTitlesQuery, TitleProhibitedCharsQuery
-from .rufus_bullets import RufusBulletsQuery
+from .rufus_bullets import IntentBulletsQuery, RufusBulletsQuery
 from .char_validation import ProhibitedCharsQuery
 from .product_type_check import ProductTypeMismatchQuery
 from .variation_check import MissingVariationsQuery
@@ -14,6 +14,7 @@ __all__ = [
     'MissingAnyAttributesQuery',
     'LongTitlesQuery',
     'TitleProhibitedCharsQuery',
+    'IntentBulletsQuery',
     'RufusBulletsQuery',
     'ProhibitedCharsQuery',
     'ProductTypeMismatchQuery',

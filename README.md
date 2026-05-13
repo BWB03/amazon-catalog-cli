@@ -27,8 +27,8 @@ The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with s
 - **Agent-Native** - CLI + MCP server as equal citizens, JSON/NDJSON output, schema introspection
 - **Fast** - Query 1000+ SKU catalogs in seconds
 - **Extensible** - Plugin system for custom queries
-- **Comprehensive** - 12 built-in catalog health checks
-- **RUFUS Optimized** - Amazon AI shopping assistant bullet scoring
+- **Comprehensive** - 13 built-in catalog health checks
+- **Intent Optimized** - COSMO-inspired shopper intent coverage for bullets
 
 ## Installation
 
@@ -56,7 +56,7 @@ catalog scan my-catalog.xlsx
 catalog scan my-catalog.xlsx --show-details
 
 # Run specific check
-catalog check rufus-bullets my-catalog.xlsx
+catalog check intent-bullets my-catalog.xlsx
 
 # List available queries
 catalog list-queries
@@ -111,7 +111,7 @@ MCP tools: `catalog_scan`, `catalog_check`, `catalog_list_queries`, `catalog_sch
 - **new-attributes** - Find unused template fields that might add value
 
 ### Content Quality
-- **rufus-bullets** - Score bullet points against Amazon's RUFUS AI framework
+- **intent-bullets** - Score bullet points against shopper intent coverage
 - **bullet-prohibited-content** - Find bullet points with prohibited chars, emojis, claims, or placeholders
 - **bullet-formatting** - Check bullet formatting (capitalization, length, punctuation)
 - **bullet-awareness** - Soft violations in bullets (excessive caps, problematic chars)
@@ -211,7 +211,7 @@ After setup, restart Claude Code and try: *"Scan my-catalog.xlsx and tell me the
   "timestamp": "2026-03-05T10:30:00Z",
   "marketplace": "US",
   "is_us_marketplace": true,
-  "total_queries": 12,
+  "total_queries": 13,
   "total_issues": 47,
   "total_affected_skus": 23,
   "results": [
@@ -258,7 +258,7 @@ from catalog.core import execute_scan, ScanRequest
 
 request = ScanRequest(
     file="my-catalog.xlsx",
-    queries=["missing-attributes", "rufus-bullets"],
+    queries=["missing-attributes", "intent-bullets"],
     fields=["sku", "severity", "details"],
     limit=20,
 )
@@ -269,16 +269,17 @@ response = execute_scan(request)
 
 Add the MCP server to any MCP client (Claude Desktop, CLR Pro, etc.) and call `catalog_scan`, `catalog_check`, `catalog_list_queries`, or `catalog_schema`.
 
-## RUFUS Bullet Optimization
+## Intent-Based Bullet Optimization
 
-The `rufus-bullets` query evaluates bullet points against Amazon's RUFUS AI framework:
+The `intent-bullets` query evaluates bullet points against COSMO-inspired shopper intent coverage:
 
-- **Bullet 1**: Should lead with Hero Benefit (why buy this?)
-- **Bullet 2**: Should state who it's for (target audience)
-- **Bullet 3**: Should differentiate (why this vs. competitors?)
-- **All bullets**: Checked for specifics, length, vague marketing, ALL CAPS
+- **Audience / need fit**: Who it is for, preferences, or problem state
+- **Function / use case**: The job, activity, event, or use flow
+- **Context / compatibility**: Where, when, or what it works with
+- **Decision evidence**: Specs, attributes, trust signals, or differentiators
+- **All bullets**: Checked for intent coverage, length, vague marketing, ALL CAPS
 
-Scores 1-5 with actionable suggestions.
+Scores 1-5 with actionable suggestions. The old `rufus-bullets` query name still works as a deprecated compatibility alias.
 
 ## Extending with Custom Queries
 

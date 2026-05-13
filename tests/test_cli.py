@@ -37,7 +37,7 @@ class TestListQueries:
         result = runner.invoke(cli, ["list-queries"])
         assert result.exit_code == 0
         assert "missing-attributes" in result.output
-        assert "rufus-bullets" in result.output
+        assert "intent-bullets" in result.output
 
     def test_json(self):
         result = runner.invoke(cli, ["list-queries", "--format", "json"])
@@ -63,11 +63,19 @@ class TestSchema:
         assert "response_schema" in data
 
     def test_single_query(self):
+        result = runner.invoke(cli, ["schema", "intent-bullets", "--format", "json"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert len(data["queries"]) == 1
+        assert data["queries"][0]["name"] == "intent-bullets"
+        assert "rufus-bullets" in data["queries"][0]["aliases"]
+
+    def test_single_query_legacy_alias(self):
         result = runner.invoke(cli, ["schema", "rufus-bullets", "--format", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert len(data["queries"]) == 1
-        assert data["queries"][0]["name"] == "rufus-bullets"
+        assert data["queries"][0]["name"] == "intent-bullets"
 
 
 class TestValidationErrors:

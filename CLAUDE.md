@@ -23,7 +23,7 @@ Three-layer design:
 
 ```bash
 catalog scan my-catalog.xlsx           # Full audit
-catalog check rufus-bullets file.xlsx  # Single query
+catalog check intent-bullets file.xlsx # Single query
 catalog list-queries                   # Available queries
 catalog schema                         # Schema introspection
 catalog mcp                            # Start MCP server

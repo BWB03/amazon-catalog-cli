@@ -35,6 +35,7 @@ class QueryPlugin(ABC):
     
     name: str = ""
     description: str = ""
+    aliases: List[str] = []
     
     @abstractmethod
     def execute(self, listings: List, clr_parser) -> List[Dict]:
@@ -64,6 +65,7 @@ class QueryEngine:
         """Initialize with parsed CLR"""
         self.clr_parser = clr_parser
         self.plugins = {}
+        self.aliases = {}
         self.listings_cache = None
         self.include_fbm_duplicates = include_fbm_duplicates
     
@@ -73,6 +75,13 @@ class QueryEngine:
             raise ValueError("Query plugin must have a name")
         
         self.plugins[plugin.name] = plugin
+
+        for alias in getattr(plugin, "aliases", []):
+            if alias == plugin.name:
+                continue
+            if alias in self.plugins or alias in self.aliases:
+                raise ValueError(f"Duplicate query alias: {alias}")
+            self.aliases[alias] = plugin.name
     
     def list_queries(self) -> List[Dict[str, str]]:
         """List available queries"""
@@ -95,10 +104,12 @@ class QueryEngine:
         Returns:
             QueryResult with findings
         """
-        if query_name not in self.plugins:
+        canonical_query_name = self.aliases.get(query_name, query_name)
+
+        if canonical_query_name not in self.plugins:
             raise ValueError(f"Unknown query: {query_name}")
         
-        plugin = self.plugins[query_name]
+        plugin = self.plugins[canonical_query_name]
         
         # Get listings (cached)
         if not self.listings_cache:
@@ -119,7 +130,9 @@ class QueryEngine:
                 'total_listings': len(self.listings_cache),
                 'marketplace': self.clr_parser.get_marketplace(),
                 'is_us_marketplace': self.clr_parser.is_us_marketplace(),
-                'params': params or {}
+                'params': params or {},
+                'requested_query': query_name,
+                'canonical_query': plugin.name,
             }
         )
         

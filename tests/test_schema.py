@@ -36,8 +36,14 @@ class TestListQueries:
         assert len(queries) == 13
         names = [q.name for q in queries]
         assert "missing-attributes" in names
-        assert "rufus-bullets" in names
+        assert "intent-bullets" in names
         assert "bullet-awareness" in names
+
+    def test_legacy_query_alias(self):
+        response = get_schema("rufus-bullets")
+        assert len(response.queries) == 1
+        assert response.queries[0].name == "intent-bullets"
+        assert "rufus-bullets" in response.queries[0].aliases
 
     def test_query_has_description(self):
         queries = list_queries()

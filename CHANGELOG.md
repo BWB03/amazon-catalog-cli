@@ -2,6 +2,16 @@
 
 All notable changes to Catalog CLI will be documented in this file.
 
+## Unreleased
+
+### Changed
+- **Intent bullet scoring** - Renamed the visible bullet optimization check to `intent-bullets`
+  - Keeps `rufus-bullets` as a deprecated compatibility alias
+  - Scores against four COSMO-inspired shopper intent dimensions: audience/need, function/use case, context/compatibility, and decision evidence
+  - Updates output language from assistant-specific wording to intent coverage
+
+---
+
 ## [2.1.0] - 2026-03-25
 
 ### Added
@@ -13,17 +23,17 @@ All notable changes to Catalog CLI will be documented in this file.
   - `critical` severity - immediate action required
 
 ### Changed
-- **RUFUS scoring rewrite** - Now evaluates bullets against the 3 core RUFUS questions, not just formatting
+- **Intent scoring rewrite** - Now evaluates bullets against 3 shopper intent questions, not just formatting
   - "Is this right for me?" — detects target user, lifestyle, and problem state signals
   - "What is the difference?" — detects differentiators, certifications, unique claims
   - "How do I use it?" — detects usage instructions, what's in the box, compatibility
-  - New SKU-level coverage check reports which RUFUS questions are unanswered across all bullets
+  - New SKU-level coverage check reports which shopper intent questions are unanswered across all bullets
   - New FAQ-style check flags comma-separated feature dumps ("Stainless steel, BPA-free, 32oz")
   - Replaces old position-locked checks (bullet 1 = benefit, bullet 2 = audience, bullet 3 = differentiator)
   - All 5 bullets now get content-quality checks, not just bullets 1-3
 
 ### Fixed
-- **RUFUS scoring bug** - Empty bullet points now return score 1 (minimum) instead of 0, keeping all scores in the documented 1-5 range
+- **Intent scoring bug** - Empty bullet points now return score 1 (minimum) instead of 0, keeping all scores in the documented 1-5 range
 
 ### Technical
 - Total queries: 12 → 13
@@ -136,7 +146,7 @@ All notable changes to Catalog CLI will be documented in this file.
 ## [1.1.0] - 2026-02-26
 
 ### Added
-- **RUFUS tier scoring** - Each SKU gets Good/Fair/Weak/Critical rating (4-5/3-4/2-3/<2)
+- **Intent tier scoring** - Each SKU gets Good/Fair/Weak/Critical rating (4-5/3-4/2-3/<2)
 - **Catalog-wide summary** - Overall score + distribution stats ("12 Good, 8 Fair, 5 Weak, 2 Critical")
 - **FBM duplicate filtering** - Auto-skips FBM/MFN versions, keeps FBA (default ON)
   - `--include-fbm-duplicates` flag to disable filtering
@@ -163,7 +173,7 @@ All notable changes to Catalog CLI will be documented in this file.
 2. missing-any-attributes
 3. long-titles
 4. title-prohibited-chars
-5. rufus-bullets
+5. intent-bullets
 6. prohibited-chars
 7. product-type-mismatch
 8. missing-variations

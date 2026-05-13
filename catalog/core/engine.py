@@ -25,7 +25,7 @@ def _get_all_query_classes():
         MissingAnyAttributesQuery,
         LongTitlesQuery,
         TitleProhibitedCharsQuery,
-        RufusBulletsQuery,
+        IntentBulletsQuery,
         ProhibitedCharsQuery,
         ProductTypeMismatchQuery,
         MissingVariationsQuery,
@@ -40,7 +40,7 @@ def _get_all_query_classes():
         MissingAnyAttributesQuery,
         LongTitlesQuery,
         TitleProhibitedCharsQuery,
-        RufusBulletsQuery,
+        IntentBulletsQuery,
         ProhibitedCharsQuery,
         BulletProhibitedContentQuery,
         BulletFormattingQuery,
@@ -163,6 +163,7 @@ def list_queries(file: str | None = None) -> list[QueryInfo]:
         queries.append(QueryInfo(
             name=instance.name,
             description=instance.description,
+            aliases=getattr(instance, "aliases", []),
         ))
     return queries
 

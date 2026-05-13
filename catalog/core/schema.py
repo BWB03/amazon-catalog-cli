@@ -21,10 +21,11 @@ def build_schema_response(target: str | None = None) -> SchemaResponse:
         info = QueryInfo(
             name=instance.name,
             description=instance.description,
+            aliases=getattr(instance, "aliases", []),
             example_usage=f"catalog check {instance.name} <clr_file> --format json",
         )
 
-        if target and instance.name != target:
+        if target and target != instance.name and target not in info.aliases:
             continue
 
         queries.append(info)

@@ -103,6 +103,7 @@ class QueryInfo(BaseModel):
     """Metadata about an available query."""
     name: str
     description: str
+    aliases: list[str] = Field(default_factory=list)
     severity_levels: list[str] = Field(default_factory=list)
     output_fields: list[str] = Field(default_factory=list)
     example_usage: str = ""

@@ -159,7 +159,7 @@ def catalog_check(
     found via catalog_scan_summary. Use limit and offset to paginate.
 
     Args:
-        query: Query name (e.g. "missing-attributes", "rufus-bullets")
+        query: Query name (e.g. "missing-attributes", "intent-bullets")
         file: Path to CLR file (.xlsx or .xlsm)
         fields: Field mask - only return these fields in issues
         limit: Max issues to return (default: 50)
