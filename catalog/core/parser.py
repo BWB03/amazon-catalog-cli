@@ -43,6 +43,7 @@ class CLRParser:
         """Load and parse CLR file"""
         self.file_path = clr_file_path
         self.workbook = openpyxl.load_workbook(clr_file_path, data_only=True, read_only=True)
+        self._listing_filter_metadata = {}
         
         # Load sheets
         self.template_sheet = self.workbook['Template']
@@ -298,11 +299,32 @@ class CLRParser:
             
             listings.append(listing)
         
+        self._listing_filter_metadata = {
+            "fbm_duplicate_exclusion": {
+                "enabled": skip_fbm_duplicates,
+                "excluded_count": 0,
+                "excluded_skus_sample": [],
+                "reason": (
+                    "When multiple rows appear to represent the same listing, "
+                    "FBM/MFN duplicate rows are excluded so issue counts focus "
+                    "on the retained FBA/listable SKU."
+                ),
+                "strategy": (
+                    "Title-based duplicate detection; when duplicate titles are "
+                    "found, prefer SKUs containing FBA and exclude non-FBA rows."
+                ),
+            }
+        }
+
         # Filter FBM/MFN duplicates (keep FBA versions)
         if skip_fbm_duplicates:
             listings = self._filter_fbm_duplicates(listings)
         
         return listings
+
+    def get_listing_filter_metadata(self) -> Dict:
+        """Return metadata about row/listing exclusions applied during parsing."""
+        return self._listing_filter_metadata
     
     def _filter_fbm_duplicates(self, listings: List[Listing]) -> List[Listing]:
         """
@@ -312,6 +334,7 @@ class CLRParser:
         seen_names = {}
         filtered = []
         skipped_count = 0
+        skipped_skus = []
         
         for listing in listings:
             # Use title as the unique identifier (item name)
@@ -329,11 +352,14 @@ class CLRParser:
                 # If this one is FBA, replace the existing one
                 if "_FBA_" in listing.sku.upper() or "FBA" in listing.sku.upper():
                     # Remove the old one, add this FBA version
+                    skipped_skus.append(existing_sku)
+                    skipped_count += 1
                     filtered = [l for l in filtered if l.sku != existing_sku]
                     filtered.append(listing)
                     seen_names[item_name] = listing.sku
                 else:
                     # This is FBM/MFN, skip it
+                    skipped_skus.append(listing.sku)
                     skipped_count += 1
                     continue
             else:
@@ -344,6 +370,23 @@ class CLRParser:
         if skipped_count > 0 and not _quiet:
             import sys
             print(f"Skipped {skipped_count} FBM/MFN duplicates (keeping FBA versions)", file=sys.stderr)
+
+        self._listing_filter_metadata = {
+            "fbm_duplicate_exclusion": {
+                "enabled": True,
+                "excluded_count": skipped_count,
+                "excluded_skus_sample": skipped_skus[:25],
+                "reason": (
+                    "When multiple rows appear to represent the same listing, "
+                    "FBM/MFN duplicate rows are excluded so issue counts focus "
+                    "on the retained FBA/listable SKU."
+                ),
+                "strategy": (
+                    "Title-based duplicate detection; when duplicate titles are "
+                    "found, prefer SKUs containing FBA and exclude non-FBA rows."
+                ),
+            }
+        }
         
         return filtered
     

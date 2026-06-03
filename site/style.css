@@ -210,6 +210,96 @@ section h2 {
   color: var(--accent-purple);
 }
 
+/* Get Started cards */
+.get-started-card {
+  position: relative;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.step-subtitle {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.steps-list {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.steps-list li {
+  counter-increment: step;
+  padding: 6px 0 6px 28px;
+  position: relative;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.steps-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 8px;
+}
+
+.steps-list li code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--accent-green);
+  background: var(--bg-code);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.steps-list li em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.steps-list li a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+
+.steps-list li a:hover {
+  text-decoration: underline;
+}
+
+.step-note {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: auto;
+}
+
 /* Pricing table */
 .pricing-table {
   width: 100%;
@@ -359,7 +449,7 @@ footer .links {
   .hero h1 { font-size: 2rem; }
   .hero .tagline { font-size: 1rem; }
   .checks-group ul { grid-template-columns: 1fr; }
-  .ways-grid { grid-template-columns: 1fr; }
+  .ways-grid { grid-template-columns: 1fr !important; }
   .security-grid { grid-template-columns: 1fr; }
   .pricing-table { font-size: 0.8rem; }
   .pricing-table th, .pricing-table td { padding: 8px; }

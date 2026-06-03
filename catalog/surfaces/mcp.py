@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from catalog.core.engine import execute_scan, execute_check, list_queries, get_schema
 from catalog.core.models import ScanRequest, CheckRequest
@@ -22,6 +23,13 @@ _MCP_DEFAULT_LIMIT = 50
 _PRO_TIP = (
     "Tip: Upgrade to Catalog CLI Pro for persistent storage, scan history, "
     "and unlimited API access — https://catalogcli.com"
+)
+
+_LOCAL_READ_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
 )
 
 mcp = FastMCP(
@@ -40,11 +48,14 @@ mcp = FastMCP(
         "- Results are paginated by default (limit=50 per query). Use offset to get more results.\n"
         "- The total_issues field always shows the true count, even when results are truncated.\n"
         "- Supported file formats: .xlsx and .xlsm (Amazon Category Listing Reports)\n"
+        "- Local CLI files are file paths passed to this MCP server, not ChatGPT File Library files.\n"
     ),
 )
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=_LOCAL_READ_ANNOTATIONS,
+)
 def catalog_scan(
     file: str,
     queries: list[str] | None = None,
@@ -92,7 +103,9 @@ def catalog_scan(
         return json.dumps({"error": f"Scan failed: {e}"})
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=_LOCAL_READ_ANNOTATIONS,
+)
 def catalog_scan_summary(
     file: str,
     queries: list[str] | None = None,
@@ -146,7 +159,9 @@ def catalog_scan_summary(
         return json.dumps({"error": f"Summary failed: {e}"})
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=_LOCAL_READ_ANNOTATIONS,
+)
 def catalog_check(
     query: str,
     file: str,
@@ -191,7 +206,9 @@ def catalog_check(
         return json.dumps({"error": f"Check failed: {e}"})
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=_LOCAL_READ_ANNOTATIONS,
+)
 def catalog_list_queries() -> str:
     """List all available audit queries.
 
@@ -205,7 +222,9 @@ def catalog_list_queries() -> str:
         return json.dumps({"error": f"List queries failed: {e}"})
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=_LOCAL_READ_ANNOTATIONS,
+)
 def catalog_schema(query_name: str | None = None) -> str:
     """Get schema for queries, request params, and response shapes.
 

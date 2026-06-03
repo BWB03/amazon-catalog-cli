@@ -225,9 +225,8 @@ def setup_claude(pro, api_key, project, dry_run):
     if pro:
         server_name = "catalog-pro"
         mcp_config = {
-            "command": "catalog",
-            "args": ["mcp", "--api"],
-            "env": {"CATALOG_API_KEY": api_key},
+            "url": "https://api.catalogcli.com/mcp/sse",
+            "headers": {"X-API-Key": api_key},
         }
     else:
         server_name = "catalog"
@@ -276,7 +275,10 @@ def setup_claude(pro, api_key, project, dry_run):
     console.print(f"  Config: {config_path}")
     console.print(f"  Server: {server_name}\n")
     console.print("[bold]Restart Claude Code, then try:[/bold]")
-    console.print('  "Scan my-catalog.xlsx and tell me the biggest issues"\n')
+    if pro:
+        console.print('  "List my catalogs and scan the most recent one"\n')
+    else:
+        console.print('  "Scan my-catalog.xlsx and tell me the biggest issues"\n')
 
 
 # --- Output helpers ---

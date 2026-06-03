@@ -119,6 +119,10 @@ class QueryEngine:
         # Execute query
         issues = plugin.execute(self.listings_cache, self.clr_parser)
         
+        listing_filters = {}
+        if hasattr(self.clr_parser, "get_listing_filter_metadata"):
+            listing_filters = self.clr_parser.get_listing_filter_metadata() or {}
+
         # Build result
         result = QueryResult(
             query_name=plugin.name,
@@ -130,6 +134,7 @@ class QueryEngine:
                 'total_listings': len(self.listings_cache),
                 'marketplace': self.clr_parser.get_marketplace(),
                 'is_us_marketplace': self.clr_parser.is_us_marketplace(),
+                'listing_filters': listing_filters,
                 'params': params or {},
                 'requested_query': query_name,
                 'canonical_query': plugin.name,
