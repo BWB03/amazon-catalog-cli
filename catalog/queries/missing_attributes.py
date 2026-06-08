@@ -5,6 +5,15 @@ Missing Attributes Queries
 from ..query_engine import QueryPlugin
 
 
+def _skip_virtual_bundle_identifier(field, listing, clr_parser):
+    return (
+        hasattr(clr_parser, "is_product_identifier_field")
+        and hasattr(clr_parser, "is_virtual_bundle_listing")
+        and clr_parser.is_product_identifier_field(field)
+        and clr_parser.is_virtual_bundle_listing(listing)
+    )
+
+
 class MissingAttributesQuery(QueryPlugin):
     """Find mandatory attributes missing from listings"""
     
@@ -17,6 +26,9 @@ class MissingAttributesQuery(QueryPlugin):
         
         for listing in listings:
             for field in required_fields:
+                if _skip_virtual_bundle_identifier(field, listing, clr_parser):
+                    continue
+
                 value = listing.all_fields.get(field)
                 
                 # Check if field is empty
@@ -47,6 +59,9 @@ class MissingAnyAttributesQuery(QueryPlugin):
         
         for listing in listings:
             for field in all_check_fields:
+                if _skip_virtual_bundle_identifier(field, listing, clr_parser):
+                    continue
+
                 value = listing.all_fields.get(field)
                 
                 if not value or str(value).strip() == "":

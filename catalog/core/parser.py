@@ -38,6 +38,7 @@ class CLRParser:
     ROW_FIELD_IDS = 5
     ROW_EXAMPLE = 6
     ROW_DATA_START = 7
+    PRODUCT_ID_FIELD_NAMES = {"product id", "product id type"}
     
     def __init__(self, clr_file_path: str):
         """Load and parse CLR file"""
@@ -217,6 +218,35 @@ class CLRParser:
                 if resolved:
                     fields.append(resolved)
         return fields
+
+    @classmethod
+    def is_product_identifier_field(cls, field_name: str) -> bool:
+        """Return True for CLR Product Id / Product Id Type display fields."""
+        return field_name.strip().lower() in cls.PRODUCT_ID_FIELD_NAMES
+
+    def is_virtual_bundle_listing(self, listing: Listing) -> bool:
+        """
+        Identify Amazon virtual bundles from CLR identifier cells.
+
+        Virtual bundles do not carry Product Id or Product Id Type values in the
+        report, while regular listings use UPC, ASIN, or GTIN Exempt identifiers.
+        """
+        identifier_fields = [
+            field
+            for field in listing.all_fields
+            if self.is_product_identifier_field(field)
+        ]
+        normalized_identifier_fields = {
+            field.strip().lower()
+            for field in identifier_fields
+        }
+        if normalized_identifier_fields != self.PRODUCT_ID_FIELD_NAMES:
+            return False
+
+        return all(
+            not str(listing.all_fields.get(field) or "").strip()
+            for field in identifier_fields
+        )
     
     def get_listings(self, skip_parents: bool = True, skip_examples: bool = True, skip_fbm_duplicates: bool = True) -> List[Listing]:
         """
