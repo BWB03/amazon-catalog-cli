@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "amazon-catalog-cli"
-version = "2.1.1"
+version = "2.2.0"
 description = "Catalog CLI - Agent-native Amazon catalog auditing tool"
 readme = "README.md"
 license = "MIT"

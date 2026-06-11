@@ -4,6 +4,25 @@ All notable changes to Catalog CLI will be documented in this file.
 
 ## Unreleased
 
+---
+
+## [2.2.0] - 2026-06-11
+
+### Added
+- **Amazon title readiness** - New `mobile-title-readiness` query flags titles over 75 characters for Amazon's mobile title update
+  - Includes `title-75` and `amazon-title-75` aliases for agent workflows
+  - Returns first-75-character title segments, overflow title text, significant terms, item highlight status, and recommended next action
+  - Keeps the existing `long-titles` 200-character check unchanged
+
+### Changed
+- README now highlights the Amazon title workflow and agent-ready rewrite triage examples
+
+### Technical
+- Total queries: 13 -> 14
+- Version bumped to 2.2.0
+
+## [2.1.1] - 2026-06-11
+
 ### Changed
 - **Intent bullet scoring** - Renamed the visible bullet optimization check to `intent-bullets`
   - Keeps `rufus-bullets` as a deprecated compatibility alias
