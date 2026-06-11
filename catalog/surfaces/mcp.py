@@ -17,7 +17,7 @@ from catalog.core.validation import ValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 # Default issue limit per query for MCP responses.
-# At 50 issues/query, a full 13-query scan is ~350 KB (well under MCP's ~1 MB limit).
+# At 50 issues/query, a full 14-query scan is ~350 KB (well under MCP's ~1 MB limit).
 _MCP_DEFAULT_LIMIT = 50
 
 _PRO_TIP = (

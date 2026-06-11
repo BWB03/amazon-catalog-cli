@@ -1,13 +1,13 @@
 # Catalog CLI - Agent Guidance
 
 ## What this tool does
-Catalog CLI audits Amazon Category Listing Reports (CLR files, `.xlsx`/`.xlsm`) for listing quality issues. It runs 13 query plugins covering missing attributes, title validation, bullet point optimization, product type checks, and more.
+Catalog CLI audits Amazon Category Listing Reports (CLR files, `.xlsx`/`.xlsm`) for listing quality issues. It runs 14 query plugins covering missing attributes, title validation, bullet point optimization, product type checks, and more.
 
 ## Quick patterns
 
 ### Health check (fastest)
 ```bash
-catalog scan report.xlsx --format json --queries missing-attributes,long-titles --fields sku,severity,details --limit 10
+catalog scan report.xlsx --format json --queries missing-attributes,mobile-title-readiness --fields sku,severity,details --limit 10
 ```
 
 ### Full audit
@@ -52,6 +52,7 @@ catalog schema missing-attributes --format json
 |-------|-------------|
 | `missing-attributes` | Find mandatory attributes missing from listings |
 | `missing-any-attributes` | Find all missing attributes (required + conditional) |
+| `mobile-title-readiness` | Find titles over 75 characters and prepare rewrite inputs |
 | `long-titles` | Find titles exceeding 200 characters |
 | `title-prohibited-chars` | Find titles with prohibited characters |
 | `intent-bullets` | Evaluate bullets against shopper intent coverage |
