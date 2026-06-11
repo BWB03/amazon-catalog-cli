@@ -9,7 +9,14 @@ The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with s
 
 > **Hosted API available** at [api.catalogcli.com](https://api.catalogcli.com/docs) — persistent storage, unlimited scans, and API access for $9.99/mo. [Learn more](https://catalogcli.com)
 
-## What's New in v2.0
+## What's New in v2.2
+
+- **Amazon title readiness** - New `mobile-title-readiness` check flags titles over 75 characters for Amazon's mobile title update
+- **Rewrite-ready output** - Returns first-75-character title segments, overflow text, significant terms, item highlight status, and recommended next actions
+- **Agent workflow friendly** - Aliases `title-75` and `amazon-title-75` make it easy to call from Claude, MCP clients, and automation workflows
+- **14 built-in checks** - Adds a new title triage workflow while keeping the classic 200-character `long-titles` check unchanged
+
+## v2.0 Agent Foundations
 
 - **Shared core architecture** - Business logic separated into `catalog/core/`, powering both CLI and MCP
 - **MCP server** - `catalog mcp` launches a stdio MCP server with 4 tools, ready for Claude Desktop and any MCP client
@@ -58,6 +65,9 @@ catalog scan my-catalog.xlsx --show-details
 # Run specific check
 catalog check intent-bullets my-catalog.xlsx
 
+# Audit titles for Amazon's 75-character mobile title update
+catalog check mobile-title-readiness my-catalog.xlsx
+
 # List available queries
 catalog list-queries
 ```
@@ -67,6 +77,10 @@ catalog list-queries
 ```bash
 # JSON output with field mask and limit
 catalog scan my-catalog.xlsx --format json --fields sku,severity,details --limit 20
+
+# Title rewrite triage for agents
+catalog check mobile-title-readiness my-catalog.xlsx --format json \
+  --fields sku,details,title_char_count,mobile_visible_title,overflow_title,all_significant_terms
 
 # Structured JSON input
 catalog scan --json '{"file": "my-catalog.xlsx", "queries": ["missing-attributes"], "limit": 10}'
