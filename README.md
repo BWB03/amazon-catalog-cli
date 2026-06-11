@@ -27,7 +27,7 @@ The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with s
 - **Agent-Native** - CLI + MCP server as equal citizens, JSON/NDJSON output, schema introspection
 - **Fast** - Query 1000+ SKU catalogs in seconds
 - **Extensible** - Plugin system for custom queries
-- **Comprehensive** - 13 built-in catalog health checks
+- **Comprehensive** - 14 built-in catalog health checks
 - **Intent Optimized** - COSMO-inspired shopper intent coverage for bullets
 
 ## Installation
@@ -115,6 +115,7 @@ MCP tools: `catalog_scan`, `catalog_check`, `catalog_list_queries`, `catalog_sch
 - **bullet-prohibited-content** - Find bullet points with prohibited chars, emojis, claims, or placeholders
 - **bullet-formatting** - Check bullet formatting (capitalization, length, punctuation)
 - **bullet-awareness** - Soft violations in bullets (excessive caps, problematic chars)
+- **mobile-title-readiness** - Find titles over 75 characters and prepare rewrite inputs
 - **long-titles** - Find titles exceeding 200 characters
 - **title-prohibited-chars** - Find titles with prohibited characters
 - **prohibited-chars** - Find prohibited characters in title/brand
@@ -211,7 +212,7 @@ After setup, restart Claude Code and try: *"Scan my-catalog.xlsx and tell me the
   "timestamp": "2026-03-05T10:30:00Z",
   "marketplace": "US",
   "is_us_marketplace": true,
-  "total_queries": 13,
+  "total_queries": 14,
   "total_issues": 47,
   "total_affected_skus": 23,
   "results": [
@@ -325,7 +326,7 @@ class MyCustomQuery(QueryPlugin):
 
 | | Open Source CLI | Free API | Pro API ($9.99/mo) |
 |---|---|---|---|
-| 13 quality audits | Yes | Yes | Yes |
+| 14 quality audits | Yes | Yes | Yes |
 | Scans | Unlimited (local) | 2 lifetime | Unlimited |
 | Catalogs stored | — | 1 | Unlimited |
 | Results persistence | — | 7 days | Permanent |
