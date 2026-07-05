@@ -6,6 +6,19 @@ All notable changes to Catalog CLI will be documented in this file.
 
 ---
 
+## [2.3.0] - 2026-07-05
+
+### Added
+- **Seller Central listing lookup** - New `catalog listing fetch <asin>` command fetches Amazon's live Seller Central AJAX listing JSON
+  - Parses `detailPageListingResponseImsv3` into structured JSON while preserving Amazon's raw response
+  - Supports local logged-in Seller Central auth via `--cookie`, `--cookie-file`, or `CATALOG_SELLER_CENTRAL_COOKIE`
+- **Seller Central listing diff** - New `catalog listing diff <asin> <clr-file>` command compares live Seller Central fields against a matching CLR row
+  - Matches CLR rows by `--sku` or by `Product Id Type = ASIN` and `Product Id = <asin>`
+  - Reports Amazon-only fields, CLR-only fields, and value mismatches for listing triage
+- **MCP Seller Central tools** - Added `catalog_seller_listing_fetch` and `catalog_seller_listing_diff` for agent workflows
+
+---
+
 ## [2.2.0] - 2026-06-11
 
 ### Added
