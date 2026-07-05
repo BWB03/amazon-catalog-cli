@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator
-from .validation import validate_file_path, validate_query_name, validate_sku
+from .validation import validate_asin, validate_file_path, validate_query_name, validate_sku
 
 
 class ScanRequest(BaseModel):
@@ -97,6 +97,71 @@ class CheckResponse(BaseModel):
     affected_skus: int = 0
     issues: list[QueryResultItem] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SellerListingFetchRequest(BaseModel):
+    """Request model for fetching Seller Central listing JSON by ASIN."""
+    asin: str = Field(..., description="ASIN to look up in Seller Central")
+    cookie: str | None = Field(None, description="Seller Central Cookie header value")
+    cookie_file: str | None = Field(None, description="Path to a file containing the Cookie header value")
+    timeout: float = Field(20.0, gt=0, le=120, description="HTTP timeout in seconds")
+    format: Literal["json", "terminal"] = Field("json", description="Output format")
+
+    @field_validator("asin")
+    @classmethod
+    def validate_request_asin(cls, v: str) -> str:
+        return validate_asin(v)
+
+    @field_validator("cookie_file")
+    @classmethod
+    def validate_cookie_file(cls, v: str | None) -> str | None:
+        return validate_file_path(v) if v else v
+
+
+class SellerListingFetchResponse(BaseModel):
+    """Response from Seller Central listing JSON fetch."""
+    fetched_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    asin: str
+    endpoint: str
+    status: Literal["success", "auth_required", "http_error", "parse_error", "request_error"]
+    status_code: int | None = None
+    raw_response: dict[str, Any] = Field(default_factory=dict)
+    display_fields: dict[str, Any] = Field(default_factory=dict)
+    parsed_imsv3: dict[str, Any] | None = None
+    warnings: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+
+class SellerListingDiffRequest(SellerListingFetchRequest):
+    """Request model for comparing Seller Central listing JSON with a CLR row."""
+    file: str = Field(..., description="Path to CLR file (.xlsx or .xlsm)")
+    sku: str | None = Field(None, description="Optional SKU to match in the CLR")
+
+    @field_validator("file")
+    @classmethod
+    def validate_file(cls, v: str) -> str:
+        return validate_file_path(v)
+
+    @field_validator("sku")
+    @classmethod
+    def validate_optional_sku(cls, v: str | None) -> str | None:
+        return validate_sku(v) if v else v
+
+
+class SellerListingDiffResponse(BaseModel):
+    """Response from comparing Seller Central listing JSON with a CLR row."""
+    asin: str
+    fetched_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    status: Literal["success", "auth_required", "http_error", "parse_error", "request_error", "no_clr_match"]
+    fetch: SellerListingFetchResponse
+    clr_match: dict[str, Any] | None = None
+    amazon_only: dict[str, Any] = Field(default_factory=dict)
+    clr_only: dict[str, Any] = Field(default_factory=dict)
+    value_mismatches: list[dict[str, Any]] = Field(default_factory=list)
+    missing_on_amazon: list[str] = Field(default_factory=list)
+    missing_in_clr: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    error: str | None = None
 
 
 class QueryInfo(BaseModel):

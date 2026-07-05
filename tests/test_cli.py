@@ -2,6 +2,7 @@
 
 from click.testing import CliRunner
 from catalog.surfaces.cli import cli
+from catalog.core.models import SellerListingDiffResponse, SellerListingFetchResponse
 import json
 
 
@@ -19,6 +20,7 @@ class TestCLIBasics:
         assert result.exit_code == 0
         assert "scan" in result.output
         assert "check" in result.output
+        assert "listing" in result.output
         assert "schema" in result.output
         assert "mcp" in result.output
 
@@ -30,6 +32,80 @@ class TestCLIBasics:
         assert "--fields" in result.output
         assert "--limit" in result.output
         assert "ndjson" in result.output
+
+    def test_listing_fetch_json(self, monkeypatch):
+        def fake_fetch(request):
+            return SellerListingFetchResponse(
+                asin=request.asin,
+                endpoint="https://sellercentral.amazon.com/abis/ajax/reconciledDetailsV2?asin=B000TEST01",
+                status="success",
+                status_code=200,
+                raw_response={"ok": True},
+                display_fields={"brand#1.value": {"displayLabel": "Brand Name", "value": "Brand"}},
+                parsed_imsv3={"brand": [{"value": "Brand"}]},
+            )
+
+        monkeypatch.setattr("catalog.surfaces.cli.fetch_seller_listing", fake_fetch)
+
+        result = runner.invoke(
+            cli,
+            ["listing", "fetch", "B000TEST01", "--cookie", "session-cookie", "--format", "json"],
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["asin"] == "B000TEST01"
+        assert data["status"] == "success"
+        assert data["parsed_imsv3"]["brand"][0]["value"] == "Brand"
+
+    def test_listing_diff_json(self, monkeypatch):
+        fetch = SellerListingFetchResponse(
+            asin="B000TEST01",
+            endpoint="https://sellercentral.amazon.com/abis/ajax/reconciledDetailsV2?asin=B000TEST01",
+            status="success",
+            status_code=200,
+        )
+
+        def fake_diff(request):
+            return SellerListingDiffResponse(
+                asin=request.asin,
+                status="success",
+                fetch=fetch,
+                clr_match={"row": 7, "sku": request.sku, "product_type": "TEST_PRODUCT"},
+                value_mismatches=[
+                    {
+                        "field": "Brand Name",
+                        "amazon_field": "Brand Name",
+                        "clr_value": "CLR",
+                        "amazon_value": "Amazon",
+                    }
+                ],
+            )
+
+        monkeypatch.setattr("catalog.surfaces.cli.diff_seller_listing", fake_diff)
+
+        with runner.isolated_filesystem():
+            open("catalog.xlsx", "w").close()
+            result = runner.invoke(
+                cli,
+                [
+                    "listing",
+                    "diff",
+                    "B000TEST01",
+                    "catalog.xlsx",
+                    "--sku",
+                    "SKU-1",
+                    "--cookie",
+                    "session-cookie",
+                    "--format",
+                    "json",
+                ],
+            )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["clr_match"]["sku"] == "SKU-1"
+        assert data["value_mismatches"][0]["clr_value"] == "CLR"
 
 
 class TestListQueries:

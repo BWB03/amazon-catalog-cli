@@ -93,6 +93,12 @@ catalog scan my-catalog.xlsx --format ndjson
 
 # Schema introspection (discover queries, params, response shapes)
 catalog schema --format json
+
+# Fetch live Seller Central listing JSON for an ASIN
+CATALOG_SELLER_CENTRAL_COOKIE='session-id=...' catalog listing fetch B000TEST01 --format json
+
+# Compare live Seller Central JSON with a CLR row
+catalog listing diff B000TEST01 my-catalog.xlsx --sku SKU-123 --format json
 ```
 
 ### MCP Server (for Claude Desktop, CLR Pro, etc.)
@@ -115,7 +121,7 @@ Add to Claude Desktop config:
 }
 ```
 
-MCP tools: `catalog_scan`, `catalog_check`, `catalog_list_queries`, `catalog_schema`
+MCP tools: `catalog_scan`, `catalog_scan_summary`, `catalog_check`, `catalog_seller_listing_fetch`, `catalog_seller_listing_diff`, `catalog_list_queries`, `catalog_schema`
 
 ## Available Queries
 
@@ -174,6 +180,43 @@ Options:
   --fields TEXT                        Comma-separated field mask
   --limit INTEGER                      Max issues to return
   --offset INTEGER                     Skip first N issues
+```
+
+### `catalog listing fetch`
+Fetch Amazon's live Seller Central listing JSON for an ASIN.
+
+Requires a logged-in Seller Central cookie from your own browser session. Pass it with `--cookie`, `--cookie-file`, or the `CATALOG_SELLER_CENTRAL_COOKIE` environment variable.
+
+```bash
+catalog listing fetch <asin> [OPTIONS]
+
+Options:
+  --format [terminal|json]  Output format (default: terminal)
+  --output PATH             Output file path
+  --cookie TEXT             Seller Central Cookie header value
+  --cookie-file PATH        File containing the Cookie header value
+  --timeout FLOAT           HTTP timeout in seconds
+  --json TEXT               JSON request body
+  --stdin                   Read JSON request from stdin
+```
+
+### `catalog listing diff`
+Compare Amazon's live Seller Central listing JSON with a matching CLR row.
+
+Rows match by `--sku` when provided. Otherwise Catalog CLI looks for `Product Id Type = ASIN` and `Product Id = <asin>` in the CLR.
+
+```bash
+catalog listing diff <asin> <clr-file> [OPTIONS]
+
+Options:
+  --sku TEXT                Optional SKU to match in the CLR
+  --format [terminal|json]  Output format (default: terminal)
+  --output PATH             Output file path
+  --cookie TEXT             Seller Central Cookie header value
+  --cookie-file PATH        File containing the Cookie header value
+  --timeout FLOAT           HTTP timeout in seconds
+  --json TEXT               JSON request body
+  --stdin                   Read JSON request from stdin
 ```
 
 ### `catalog schema`
@@ -282,7 +325,7 @@ response = execute_scan(request)
 
 ### Via MCP
 
-Add the MCP server to any MCP client (Claude Desktop, CLR Pro, etc.) and call `catalog_scan`, `catalog_check`, `catalog_list_queries`, or `catalog_schema`.
+Add the MCP server to any MCP client (Claude Desktop, CLR Pro, etc.) and call `catalog_scan`, `catalog_check`, `catalog_seller_listing_fetch`, `catalog_seller_listing_diff`, `catalog_list_queries`, or `catalog_schema`.
 
 ## Intent-Based Bullet Optimization
 

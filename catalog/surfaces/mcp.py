@@ -12,7 +12,13 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from catalog.core.engine import execute_scan, execute_check, list_queries, get_schema
-from catalog.core.models import ScanRequest, CheckRequest
+from catalog.core.models import (
+    CheckRequest,
+    ScanRequest,
+    SellerListingDiffRequest,
+    SellerListingFetchRequest,
+)
+from catalog.core.seller_central import diff_seller_listing, fetch_seller_listing
 from catalog.core.validation import ValidationError
 from pydantic import ValidationError as PydanticValidationError
 
@@ -30,6 +36,13 @@ _LOCAL_READ_ANNOTATIONS = ToolAnnotations(
     destructiveHint=False,
     idempotentHint=True,
     openWorldHint=False,
+)
+
+_EXTERNAL_READ_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
 )
 
 mcp = FastMCP(
@@ -204,6 +217,93 @@ def catalog_check(
         return json.dumps({"error": f"Invalid input: {e}"})
     except Exception as e:
         return json.dumps({"error": f"Check failed: {e}"})
+
+
+@mcp.tool(
+    annotations=_EXTERNAL_READ_ANNOTATIONS,
+)
+def catalog_seller_listing_fetch(
+    asin: str,
+    cookie: str | None = None,
+    cookie_file: str | None = None,
+    timeout: float = 20.0,
+) -> str:
+    """Fetch Amazon Seller Central's live listing JSON for an ASIN.
+
+    Requires a logged-in Seller Central Cookie header. Prefer setting
+    CATALOG_SELLER_CENTRAL_COOKIE in the local MCP server environment or passing
+    cookie_file instead of pasting cookie text into an agent conversation.
+
+    Args:
+        asin: ASIN to look up
+        cookie: Optional Seller Central Cookie header value
+        cookie_file: Optional local file containing the Cookie header value
+        timeout: HTTP timeout in seconds
+
+    Returns:
+        JSON string with raw_response, display_fields, parsed_imsv3, and status
+    """
+    try:
+        request = SellerListingFetchRequest(
+            asin=asin,
+            cookie=cookie,
+            cookie_file=cookie_file,
+            timeout=timeout,
+            format="json",
+        )
+        response = fetch_seller_listing(request)
+        return json.dumps(response.model_dump())
+    except (ValidationError, PydanticValidationError) as e:
+        return json.dumps({"error": f"Invalid input: {e}"})
+    except Exception as e:
+        return json.dumps({"error": f"Seller listing fetch failed: {e}"})
+
+
+@mcp.tool(
+    annotations=_EXTERNAL_READ_ANNOTATIONS,
+)
+def catalog_seller_listing_diff(
+    asin: str,
+    file: str,
+    sku: str | None = None,
+    cookie: str | None = None,
+    cookie_file: str | None = None,
+    timeout: float = 20.0,
+) -> str:
+    """Compare Seller Central's live listing JSON with a matching CLR row.
+
+    The CLR row is matched by SKU when provided, otherwise by Product Id Type
+    ASIN and Product Id equal to the requested ASIN.
+
+    Args:
+        asin: ASIN to look up
+        file: Path to CLR file (.xlsx or .xlsm)
+        sku: Optional SKU to match in the CLR
+        cookie: Optional Seller Central Cookie header value
+        cookie_file: Optional local file containing the Cookie header value
+        timeout: HTTP timeout in seconds
+
+    Returns:
+        JSON string with fetch data and field-level comparison results
+    """
+    try:
+        request = SellerListingDiffRequest(
+            asin=asin,
+            file=file,
+            sku=sku,
+            cookie=cookie,
+            cookie_file=cookie_file,
+            timeout=timeout,
+            format="json",
+        )
+        response = diff_seller_listing(request)
+        return json.dumps(response.model_dump())
+    except FileNotFoundError:
+        return json.dumps({"error": f"File not found: {file}"})
+    except (ValidationError, PydanticValidationError) as e:
+        return json.dumps({"error": f"Invalid input: {e}"})
+    except Exception as e:
+        return json.dumps({"error": f"Seller listing diff failed: {e}"})
 
 
 @mcp.tool(
