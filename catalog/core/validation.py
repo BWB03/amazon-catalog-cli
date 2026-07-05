@@ -80,3 +80,16 @@ def validate_sku(sku: str) -> str:
         )
 
     return sku
+
+
+def validate_asin(asin: str) -> str:
+    """Validate and normalize an Amazon ASIN."""
+    if not asin:
+        raise ValidationError("ASIN cannot be empty")
+
+    asin = asin.strip().upper()
+
+    if not re.match(r"^[A-Z0-9]{10}$", asin):
+        raise ValidationError("ASIN must be exactly 10 alphanumeric characters")
+
+    return asin

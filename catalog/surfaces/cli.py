@@ -11,7 +11,13 @@ import click
 from rich.console import Console
 
 from catalog.core.engine import execute_scan, execute_check, list_queries, get_schema
-from catalog.core.models import ScanRequest, CheckRequest
+from catalog.core.models import (
+    CheckRequest,
+    ScanRequest,
+    SellerListingDiffRequest,
+    SellerListingFetchRequest,
+)
+from catalog.core.seller_central import diff_seller_listing, fetch_seller_listing
 from catalog.core.validation import ValidationError
 from catalog.output import format_terminal, format_json, format_csv, format_ndjson, print_summary
 
@@ -192,6 +198,115 @@ def schema(query_name, output_format):
             console.print("[dim]Tip: catalog schema --format json for machine-readable output[/dim]")
 
 
+@cli.group()
+def listing():
+    """Fetch and compare live Seller Central listing JSON"""
+    pass
+
+
+@listing.command("fetch")
+@click.argument('asin', required=False)
+@click.option('--format', 'output_format', type=click.Choice(['terminal', 'json']),
+              default=None, help='Output format')
+@click.option('--output', 'output_path', type=click.Path(), help='Output file path')
+@click.option('--cookie', type=str, default=None,
+              help='Seller Central Cookie header value')
+@click.option('--cookie-file', type=click.Path(exists=True), default=None,
+              help='Path to a file containing the Seller Central Cookie header value')
+@click.option('--timeout', type=float, default=20.0, help='HTTP timeout in seconds')
+@click.option('--json', 'json_input', type=str, default=None,
+              help='JSON request body (agent-friendly input)')
+@click.option('--stdin', 'use_stdin', is_flag=True, default=False,
+              help='Read JSON request from stdin')
+def listing_fetch(asin, output_format, output_path, cookie, cookie_file, timeout, json_input, use_stdin):
+    """Fetch Amazon's Seller Central listing JSON for an ASIN"""
+    try:
+        json_data = _parse_json_input(json_input, use_stdin)
+
+        if json_data:
+            request = SellerListingFetchRequest(**json_data)
+        else:
+            if not asin:
+                raise click.UsageError("ASIN is required (or use --json/--stdin)")
+
+            request = SellerListingFetchRequest(
+                asin=asin,
+                cookie=cookie,
+                cookie_file=cookie_file,
+                timeout=timeout,
+                format=output_format or _default_listing_format(),
+            )
+
+        if output_format:
+            request.format = output_format
+
+        response = fetch_seller_listing(request)
+        _output_seller_listing_response(response, request.format, output_path)
+        if response.status != "success":
+            raise SystemExit(1)
+
+    except (ValidationError, Exception) as e:
+        if isinstance(e, SystemExit):
+            raise
+        fmt = output_format or _default_listing_format()
+        _error_output(str(e), fmt)
+        raise SystemExit(1)
+
+
+@listing.command("diff")
+@click.argument('asin', required=False)
+@click.argument('clr_file', required=False, type=click.Path(exists=True))
+@click.option('--sku', type=str, default=None, help='Optional SKU to match in the CLR')
+@click.option('--format', 'output_format', type=click.Choice(['terminal', 'json']),
+              default=None, help='Output format')
+@click.option('--output', 'output_path', type=click.Path(), help='Output file path')
+@click.option('--cookie', type=str, default=None,
+              help='Seller Central Cookie header value')
+@click.option('--cookie-file', type=click.Path(exists=True), default=None,
+              help='Path to a file containing the Seller Central Cookie header value')
+@click.option('--timeout', type=float, default=20.0, help='HTTP timeout in seconds')
+@click.option('--json', 'json_input', type=str, default=None,
+              help='JSON request body (agent-friendly input)')
+@click.option('--stdin', 'use_stdin', is_flag=True, default=False,
+              help='Read JSON request from stdin')
+def listing_diff(asin, clr_file, sku, output_format, output_path, cookie, cookie_file,
+                 timeout, json_input, use_stdin):
+    """Compare Seller Central listing JSON with a CLR row"""
+    try:
+        json_data = _parse_json_input(json_input, use_stdin)
+
+        if json_data:
+            request = SellerListingDiffRequest(**json_data)
+        else:
+            if not asin or not clr_file:
+                raise click.UsageError("ASIN and CLR_FILE are required (or use --json/--stdin)")
+
+            request = SellerListingDiffRequest(
+                asin=asin,
+                file=clr_file,
+                sku=sku,
+                cookie=cookie,
+                cookie_file=cookie_file,
+                timeout=timeout,
+                format=output_format or _default_listing_format(),
+            )
+
+        if output_format:
+            request.format = output_format
+
+        response = diff_seller_listing(request)
+        _output_seller_listing_response(response, request.format, output_path)
+        if response.status != "success":
+            raise SystemExit(1)
+
+    except (ValidationError, Exception) as e:
+        if isinstance(e, SystemExit):
+            raise
+        fmt = output_format or _default_listing_format()
+        _error_output(str(e), fmt)
+        raise SystemExit(1)
+
+
 @cli.command()
 def mcp():
     """Start the MCP server (stdio transport)"""
@@ -289,6 +404,12 @@ def _default_format() -> str:
     return os.environ.get("CATALOG_CLI_DEFAULT_FORMAT", "terminal")
 
 
+def _default_listing_format() -> str:
+    """Return a safe default format for listing lookup commands."""
+    fmt = _default_format()
+    return "json" if fmt in ("csv", "ndjson") else fmt
+
+
 def _error_output(message: str, fmt: str):
     """Output an error in the appropriate format."""
     if fmt in ("json", "ndjson"):
@@ -353,6 +474,23 @@ def _output_check_response(response, fmt, output_path, show_details):
 
     else:  # terminal
         _print_terminal_check(response, show_details)
+
+
+def _output_seller_listing_response(response, fmt, output_path):
+    """Route Seller Central listing responses to the right formatter."""
+    if fmt == 'json':
+        output = json_mod.dumps(response.model_dump(), indent=2)
+        if output_path:
+            with open(output_path, 'w') as f:
+                f.write(output)
+            console.print(f"[green]JSON exported to {output_path}[/green]")
+        else:
+            click.echo(output)
+    else:
+        if hasattr(response, "value_mismatches"):
+            _print_terminal_listing_diff(response)
+        else:
+            _print_terminal_listing_fetch(response)
 
 
 def _print_terminal_scan(response, show_details=True):
@@ -463,6 +601,98 @@ def _print_terminal_check(response, show_details=True):
 
         console.print(table)
     console.print()
+
+
+def _print_terminal_listing_fetch(response):
+    """Print Seller Central fetch results in terminal format."""
+    from rich.panel import Panel
+    from rich.table import Table
+
+    status_line = f"[bold]ASIN:[/bold] {response.asin}\n[bold]Status:[/bold] {response.status}"
+    if response.status_code:
+        status_line += f"\n[bold]HTTP:[/bold] {response.status_code}"
+    if response.error:
+        status_line += f"\n[bold]Error:[/bold] {response.error}"
+
+    console.print()
+    console.print(Panel(status_line, title="Seller Central Listing", border_style="blue"))
+
+    if response.warnings:
+        for warning in response.warnings:
+            console.print(f"[yellow]Warning:[/yellow] {warning}")
+
+    if response.status != "success":
+        console.print()
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Field", width=32)
+    table.add_column("Value", width=80)
+
+    count = 0
+    for field_id, payload in response.display_fields.items():
+        label = field_id
+        value = payload
+        if isinstance(payload, dict):
+            label = payload.get("displayLabel") or field_id
+            value = payload.get("value", "")
+        if value is None or str(value).strip() == "":
+            continue
+        table.add_row(str(label)[:32], str(value)[:80])
+        count += 1
+        if count >= 30:
+            break
+
+    if len(response.display_fields) > count:
+        table.add_row("...", f"+{len(response.display_fields) - count} more fields")
+
+    console.print(table)
+    console.print("[dim]Use --format json to inspect raw_response and parsed_imsv3.[/dim]\n")
+
+
+def _print_terminal_listing_diff(response):
+    """Print Seller Central diff results in terminal format."""
+    from rich.panel import Panel
+    from rich.table import Table
+
+    match = response.clr_match or {}
+    status_line = (
+        f"[bold]ASIN:[/bold] {response.asin}\n"
+        f"[bold]Status:[/bold] {response.status}\n"
+        f"[bold]CLR SKU:[/bold] {match.get('sku', '')}\n"
+        f"[bold]Mismatches:[/bold] {len(response.value_mismatches)}\n"
+        f"[bold]Amazon-only fields:[/bold] {len(response.amazon_only)}\n"
+        f"[bold]CLR-only fields:[/bold] {len(response.clr_only)}"
+    )
+    if response.error:
+        status_line += f"\n[bold]Error:[/bold] {response.error}"
+
+    console.print()
+    console.print(Panel(status_line, title="Seller Central Listing Diff", border_style="blue"))
+
+    if response.warnings:
+        for warning in response.warnings:
+            console.print(f"[yellow]Warning:[/yellow] {warning}")
+
+    if response.value_mismatches:
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("Field", width=28)
+        table.add_column("CLR", width=48)
+        table.add_column("Amazon", width=48)
+
+        for mismatch in response.value_mismatches[:20]:
+            table.add_row(
+                str(mismatch.get("field", ""))[:28],
+                str(mismatch.get("clr_value", ""))[:48],
+                str(mismatch.get("amazon_value", ""))[:48],
+            )
+
+        if len(response.value_mismatches) > 20:
+            table.add_row("...", f"+{len(response.value_mismatches) - 20} more", "")
+
+        console.print(table)
+
+    console.print("[dim]Use --format json for complete amazon_only, clr_only, and raw fetch data.[/dim]\n")
 
 
 def format_csv_from_response(response, output_path):

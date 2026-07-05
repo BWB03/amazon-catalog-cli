@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from .models import (
     ScanRequest, ScanResponse, CheckRequest, CheckResponse,
-    QueryInfo, SchemaResponse,
+    QueryInfo, SchemaResponse, SellerListingDiffRequest,
+    SellerListingDiffResponse, SellerListingFetchRequest,
+    SellerListingFetchResponse,
 )
 
 
@@ -35,9 +37,13 @@ def build_schema_response(target: str | None = None) -> SchemaResponse:
         request_schema={
             "scan": ScanRequest.model_json_schema(),
             "check": CheckRequest.model_json_schema(),
+            "seller_listing_fetch": SellerListingFetchRequest.model_json_schema(),
+            "seller_listing_diff": SellerListingDiffRequest.model_json_schema(),
         },
         response_schema={
             "scan": ScanResponse.model_json_schema(),
             "check": CheckResponse.model_json_schema(),
+            "seller_listing_fetch": SellerListingFetchResponse.model_json_schema(),
+            "seller_listing_diff": SellerListingDiffResponse.model_json_schema(),
         },
     )

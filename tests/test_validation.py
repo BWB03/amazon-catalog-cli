@@ -2,6 +2,7 @@
 
 import pytest
 from catalog.core.validation import (
+    validate_asin,
     validate_file_path,
     validate_query_name,
     validate_sku,
@@ -92,3 +93,16 @@ class TestValidateSku:
     def test_rejects_control_chars(self):
         with pytest.raises(ValidationError, match="control characters"):
             validate_sku("ABC\x00123")
+
+
+class TestValidateAsin:
+    def test_valid_asin_is_uppercased(self):
+        assert validate_asin("b000test01") == "B000TEST01"
+
+    def test_rejects_short_asin(self):
+        with pytest.raises(ValidationError, match="exactly 10"):
+            validate_asin("B000TEST")
+
+    def test_rejects_symbols(self):
+        with pytest.raises(ValidationError, match="alphanumeric"):
+            validate_asin("B000TEST!?")
