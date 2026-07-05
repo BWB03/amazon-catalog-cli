@@ -13,7 +13,7 @@ class TestCLIBasics:
     def test_version(self):
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "2.2" in result.output
+        assert "2.3" in result.output
 
     def test_help(self):
         result = runner.invoke(cli, ["--help"])

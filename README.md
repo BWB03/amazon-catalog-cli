@@ -9,12 +9,19 @@ The first AI-agent-friendly Amazon catalog analysis tool. Query your CLRs with s
 
 > **Hosted API available** at [api.catalogcli.com](https://api.catalogcli.com/docs) — persistent storage, unlimited scans, and API access for $9.99/mo. [Learn more](https://catalogcli.com)
 
-## What's New in v2.2
+## What's New in v2.3
 
-- **Amazon title readiness** - New `mobile-title-readiness` check flags titles over 75 characters for Amazon's mobile title update
+- **Seller Central AJAX lookup** - Fetch Amazon's live Seller Central listing JSON with `catalog listing fetch <asin>`
+- **Live listing vs CLR diff** - Compare Amazon's current listing fields against your Category Listing Report with `catalog listing diff <asin> <clr-file>`
+- **Agent-ready Seller Central tools** - New MCP tools `catalog_seller_listing_fetch` and `catalog_seller_listing_diff`
+- **Local cookie auth** - Use `--cookie`, `--cookie-file`, or `CATALOG_SELLER_CENTRAL_COOKIE`; Seller Central cookies stay local
+
+## v2.2 Title Readiness
+
+- **Amazon title readiness** - `mobile-title-readiness` flags titles over 75 characters for Amazon's mobile title update
 - **Rewrite-ready output** - Returns first-75-character title segments, overflow text, significant terms, item highlight status, and recommended next actions
 - **Agent workflow friendly** - Aliases `title-75` and `amazon-title-75` make it easy to call from Claude, MCP clients, and automation workflows
-- **14 built-in checks** - Adds a new title triage workflow while keeping the classic 200-character `long-titles` check unchanged
+- **14 built-in checks** - Adds a title triage workflow while keeping the classic 200-character `long-titles` check unchanged
 
 ## v2.0 Agent Foundations
 
