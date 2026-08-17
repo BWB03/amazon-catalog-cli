@@ -3,9 +3,11 @@ CLR Parser Module
 Extracts and normalizes data from Amazon Category Listing Reports
 """
 
-import openpyxl
-from typing import Optional, Dict, List
+import unicodedata
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+import openpyxl
 
 # Suppress stderr output (set True for MCP stdio transport)
 _quiet = False
@@ -29,6 +31,23 @@ class Listing:
 
 class CLRParser:
     """Parse Amazon Category Listing Reports"""
+
+    # Amazon localizes the Template worksheet name for several European
+    # marketplaces. Belgium may produce either a French or Dutch workbook.
+    TEMPLATE_SHEET_NAMES = (
+        'Template',   # US, CA, UK and other English-language marketplaces
+        'Vorlage',    # DE
+        'Modèle',     # FR, BE (French)
+        'Modello',    # IT
+        'Plantilla',  # ES
+        'Mall',       # SE
+        'Szablon',    # PL
+        'Sjabloon',   # NL, BE (Dutch)
+    )
+    KNOWN_MARKETPLACES = (
+        'US', 'CA', 'UK', 'DE', 'FR', 'IT', 'ES', 'SE', 'PL', 'BE', 'NL',
+        'JP', 'AU', 'IN', 'MX', 'BR',
+    )
     
     # Standard CLR row structure
     ROW_SETTINGS = 1
@@ -46,14 +65,83 @@ class CLRParser:
         self.workbook = openpyxl.load_workbook(clr_file_path, data_only=True, read_only=True)
         self._listing_filter_metadata = {}
         
-        # Load sheets
-        self.template_sheet = self.workbook['Template']
+        # Load the CLR data sheet (its title is localized by Amazon).
+        self.template_sheet = self._find_template_sheet()
         
         # Parse structure
         self.headers = self._extract_headers()
         self._field_id_to_display = self._build_field_id_map()
         self.field_definitions = self._extract_field_definitions()
         self.marketplace = self._extract_marketplace()
+
+    @staticmethod
+    def _normalize_sheet_name(name: str) -> str:
+        """Normalize worksheet titles for case- and accent-insensitive matching."""
+        normalized = unicodedata.normalize('NFKD', str(name).strip().casefold())
+        return ''.join(
+            character for character in normalized
+            if not unicodedata.combining(character)
+        )
+
+    def _find_template_sheet(self):
+        """Return the localized CLR Template sheet.
+
+        Known Amazon translations are preferred. A structural fallback supports
+        minor or future title variations, but only when a sheet looks like a CLR:
+        row 4 contains display headers and row 5 contains Amazon field IDs.
+        """
+        worksheets_by_name = {
+            self._normalize_sheet_name(sheet.title): sheet
+            for sheet in self.workbook.worksheets
+        }
+
+        for expected_name in self.TEMPLATE_SHEET_NAMES:
+            sheet = worksheets_by_name.get(self._normalize_sheet_name(expected_name))
+            if sheet is not None:
+                return sheet
+
+        structural_matches = [
+            sheet for sheet in self.workbook.worksheets
+            if self._looks_like_template_sheet(sheet)
+        ]
+        if len(structural_matches) == 1:
+            return structural_matches[0]
+
+        available = ', '.join(repr(name) for name in self.workbook.sheetnames)
+        supported = ', '.join(repr(name) for name in self.TEMPLATE_SHEET_NAMES)
+        raise ValueError(
+            'Could not find the Amazon CLR template worksheet. '
+            f'Supported worksheet names: {supported}. '
+            f'Workbook worksheets: {available or "none"}.'
+        )
+
+    def _looks_like_template_sheet(self, sheet) -> bool:
+        """Check for the language-independent structure of an Amazon CLR sheet."""
+        if sheet.max_row < self.ROW_FIELD_IDS or sheet.max_column < 3:
+            return False
+
+        header_cells = list(sheet[self.ROW_COL_HEADERS])
+        field_id_cells = list(sheet[self.ROW_FIELD_IDS])
+        populated_headers = [cell for cell in header_cells if cell.value not in (None, '')]
+        populated_field_ids = [cell for cell in field_id_cells if cell.value not in (None, '')]
+
+        if len(populated_headers) < 3 or len(populated_field_ids) < 3:
+            return False
+
+        header_columns = {cell.column for cell in populated_headers}
+        field_id_columns = {cell.column for cell in populated_field_ids}
+        aligned_columns = header_columns & field_id_columns
+        if len(aligned_columns) < 3:
+            return False
+
+        # Field IDs are stable machine-readable identifiers even when display
+        # headers and worksheet titles are localized.
+        field_ids = [str(cell.value).strip() for cell in populated_field_ids]
+        machine_readable_ids = sum(
+            any(marker in field_id for marker in ('[', '#', '_'))
+            for field_id in field_ids
+        )
+        return machine_readable_ids >= 2
         
     def _extract_marketplace(self) -> str:
         """
@@ -80,8 +168,7 @@ class CLRParser:
                     
                     # Look for direct marketplace codes
                     value_upper = value.upper()
-                    known_marketplaces = ['US', 'CA', 'UK', 'DE', 'FR', 'IT', 'ES', 'JP', 'AU', 'IN', 'MX', 'BR']
-                    if value_upper in known_marketplaces:
+                    if value_upper in self.KNOWN_MARKETPLACES:
                         return value_upper
             
             # Default to US if not found
