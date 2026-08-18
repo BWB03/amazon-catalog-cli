@@ -29,7 +29,7 @@ setup(
         "click>=8.0.0",
         "rich>=13.0.0",
         "pydantic>=2.0.0",
-        "mcp>=1.0.0",
+        "mcp>=1.0.0,<2.0.0",
     ],
     entry_points={
         "console_scripts": [
