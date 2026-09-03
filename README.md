@@ -163,7 +163,7 @@ Options:
   --format [terminal|json|csv|ndjson]  Output format (default: terminal)
   --output PATH                        Output file path
   --show-details / --no-details        Show detailed results
-  --include-fbm-duplicates             Include FBM/MFN duplicates
+  --include-fbm-duplicates             Legacy: include repeated exact-SKU rows
   --json TEXT                          JSON request body
   --stdin                              Read JSON request from stdin
   --queries TEXT                       Comma-separated query names

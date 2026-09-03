@@ -210,3 +210,6 @@ All notable changes to Catalog CLI will be documented in this file.
 7. product-type-mismatch
 8. missing-variations
 9. new-attributes
+# Unreleased
+
+- Make missing-attribute checks copy-aware: ignore reference-only definitions, preserve same-title distinct SKUs, consolidate exact-SKU repeats, expose shared-ASIN blanks for review, and exclude removed/delete rows from active content-gap counts.

@@ -17,7 +17,13 @@ class ScanRequest(BaseModel):
     fields: list[str] | None = Field(None, description="Field mask - only return these fields in issues")
     limit: int | None = Field(None, ge=1, description="Max issues to return")
     offset: int | None = Field(None, ge=0, description="Skip first N issues")
-    exclude_fbm: bool = Field(True, description="Exclude FBM/MFN duplicates (keep FBA)")
+    exclude_fbm: bool = Field(
+        True,
+        description=(
+            "Legacy compatibility switch: consolidate exact-SKU repeated rows. "
+            "Distinct SKUs are never excluded by title alone."
+        ),
+    )
     format: Literal["json", "csv", "terminal", "ndjson"] = Field("json", description="Output format")
 
     @field_validator("file")
@@ -40,7 +46,13 @@ class CheckRequest(BaseModel):
     fields: list[str] | None = Field(None, description="Field mask - only return these fields in issues")
     limit: int | None = Field(None, ge=1, description="Max issues to return")
     offset: int | None = Field(None, ge=0, description="Skip first N issues")
-    exclude_fbm: bool = Field(True, description="Exclude FBM/MFN duplicates (keep FBA)")
+    exclude_fbm: bool = Field(
+        True,
+        description=(
+            "Legacy compatibility switch: consolidate exact-SKU repeated rows. "
+            "Distinct SKUs are never excluded by title alone."
+        ),
+    )
     format: Literal["json", "csv", "terminal", "ndjson"] = Field("json", description="Output format")
 
     @field_validator("file")
