@@ -64,6 +64,8 @@ class CLRParser:
         self.file_path = clr_file_path
         self.workbook = openpyxl.load_workbook(clr_file_path, data_only=True, read_only=True)
         self._listing_filter_metadata = {}
+        self._unfiltered_listings = []
+        self._copy_aware_blank_reviews = []
         
         # Load the CLR data sheet (its title is localized by Amazon).
         self.template_sheet = self._find_template_sheet()
@@ -245,14 +247,21 @@ class CLRParser:
                 if cell.value:
                     dd_headers[str(cell.value).strip().lower()] = idx
             
-            # Extract definitions
+            # Extract definitions. Group headings are often carried only on the
+            # first row of a section, so preserve the most recent nonblank value.
+            current_group = ""
             for row in dd_sheet.iter_rows(min_row=header_row_idx + 1):
                 field_name_idx = dd_headers.get('field name')
                 required_idx = dd_headers.get('required?')
+                group_idx = dd_headers.get('group name') or dd_headers.get('group')
                 
                 if not field_name_idx:
                     continue
                 
+                group = row[group_idx - 1].value if group_idx else None
+                if group:
+                    current_group = str(group).strip()
+
                 field_name = row[field_name_idx - 1].value
                 if not field_name:
                     continue
@@ -261,7 +270,8 @@ class CLRParser:
                 
                 definitions[str(field_name).strip()] = {
                     'required': str(required).strip().lower() if required else '',
-                    'field_name': str(field_name).strip()
+                    'field_name': str(field_name).strip(),
+                    'group': current_group,
                 }
         
         except KeyError:
@@ -290,7 +300,10 @@ class CLRParser:
         """Get list of required field display names that exist in this CLR."""
         fields = []
         for field_name, definition in self.field_definitions.items():
-            if definition['required'] == 'required':
+            if (
+                definition['required'] == 'required'
+                and not self._is_reference_only_definition(definition)
+            ):
                 resolved = self._resolve_field_name(field_name)
                 if resolved:
                     fields.append(resolved)
@@ -300,11 +313,20 @@ class CLRParser:
         """Get list of conditionally required field display names that exist in this CLR."""
         fields = []
         for field_name, definition in self.field_definitions.items():
-            if 'conditional' in definition['required'].lower():
+            if (
+                'conditional' in definition['required'].lower()
+                and not self._is_reference_only_definition(definition)
+            ):
                 resolved = self._resolve_field_name(field_name)
                 if resolved:
                     fields.append(resolved)
         return fields
+
+    @staticmethod
+    def _is_reference_only_definition(definition: Dict) -> bool:
+        """Return True when Amazon places a field in a reference-only group."""
+        group = str(definition.get('group') or '').strip().lower()
+        return 'reference-only' in group or 'reference only' in group
 
     @classmethod
     def is_product_identifier_field(cls, field_name: str) -> bool:
@@ -416,24 +438,12 @@ class CLRParser:
             
             listings.append(listing)
         
-        self._listing_filter_metadata = {
-            "fbm_duplicate_exclusion": {
-                "enabled": skip_fbm_duplicates,
-                "excluded_count": 0,
-                "excluded_skus_sample": [],
-                "reason": (
-                    "When multiple rows appear to represent the same listing, "
-                    "FBM/MFN duplicate rows are excluded so issue counts focus "
-                    "on the retained FBA/listable SKU."
-                ),
-                "strategy": (
-                    "Title-based duplicate detection; when duplicate titles are "
-                    "found, prefer SKUs containing FBA and exclude non-FBA rows."
-                ),
-            }
-        }
+        self._unfiltered_listings = list(listings)
+        self._copy_aware_blank_reviews = []
+        self._listing_filter_metadata = self._build_record_equivalence_metadata(listings)
 
-        # Filter FBM/MFN duplicates (keep FBA versions)
+        # Preserve distinct SKUs even when their titles match. When the legacy
+        # exclusion switch is enabled, consolidate exact-SKU duplicate records.
         if skip_fbm_duplicates:
             listings = self._filter_fbm_duplicates(listings)
         
@@ -441,71 +451,207 @@ class CLRParser:
 
     def get_listing_filter_metadata(self) -> Dict:
         """Return metadata about row/listing exclusions applied during parsing."""
-        return self._listing_filter_metadata
+        metadata = dict(self._listing_filter_metadata)
+        metadata['copy_aware_blank_reviews'] = list(self._copy_aware_blank_reviews)
+        return metadata
+
+    @staticmethod
+    def _normalized(value: Optional[str]) -> str:
+        return str(value or '').strip().casefold()
+
+    @staticmethod
+    def _get_named_field(listing: Listing, *names: str) -> str:
+        wanted = {name.casefold() for name in names}
+        for field_name, value in listing.all_fields.items():
+            if str(field_name).strip().casefold() in wanted:
+                return str(value or '').strip()
+        return ''
+
+    def _explicit_asin(self, listing: Listing) -> str:
+        identifier_type = self._get_named_field(listing, 'Product Id Type')
+        identifier = self._get_named_field(listing, 'Product Id')
+        if identifier_type.casefold() != 'asin':
+            return ''
+        normalized = identifier.strip().upper()
+        if len(normalized) == 10 and normalized.isalnum():
+            return normalized
+        return ''
+
+    @staticmethod
+    def _conflicting_fields(group: List[Listing]) -> List[str]:
+        fields = set().union(*(listing.all_fields.keys() for listing in group))
+        conflicts = []
+        for field in fields:
+            values = {
+                str(listing.all_fields.get(field) or '').strip()
+                for listing in group
+                if str(listing.all_fields.get(field) or '').strip()
+            }
+            if len(values) > 1:
+                conflicts.append(field)
+        return sorted(conflicts)
+
+    def _build_record_equivalence_metadata(self, listings: List[Listing]) -> Dict:
+        sku_groups: Dict[str, List[Listing]] = {}
+        asin_groups: Dict[str, List[Listing]] = {}
+        title_groups: Dict[str, List[Listing]] = {}
+
+        for listing in listings:
+            sku_groups.setdefault(self._normalized(listing.sku), []).append(listing)
+            asin = self._explicit_asin(listing)
+            if asin:
+                asin_groups.setdefault(asin, []).append(listing)
+            title = self._normalized(listing.title)
+            if title:
+                title_groups.setdefault(title, []).append(listing)
+
+        duplicate_clusters = [
+            {
+                'sku': group[0].sku,
+                'rows': [listing.row_number for listing in group],
+                'conflicting_fields': self._conflicting_fields(group),
+            }
+            for group in sku_groups.values()
+            if len(group) > 1
+        ]
+        shared_asin_clusters = [
+            {
+                'asin': asin,
+                'skus': sorted({listing.sku for listing in group}),
+                'rows': [listing.row_number for listing in group],
+                'conflicting_fields': self._conflicting_fields(group),
+            }
+            for asin, group in asin_groups.items()
+            if len({self._normalized(listing.sku) for listing in group}) > 1
+        ]
+        same_title_candidates = sum(
+            1
+            for group in title_groups.values()
+            if len({self._normalized(listing.sku) for listing in group}) > 1
+        )
+
+        return {
+            'record_equivalence': {
+                'raw_listing_count': len(listings),
+                'exact_sku_duplicate_clusters': duplicate_clusters,
+                'shared_asin_review_clusters': shared_asin_clusters,
+                'same_title_candidate_clusters': same_title_candidates,
+                'title_only_rows_excluded': 0,
+                'strategy': (
+                    'Consolidate exact-SKU duplicate records only. Keep distinct '
+                    'SKUs separate; shared ASINs are review clusters and matching '
+                    'titles alone never establish equivalence.'
+                ),
+            },
+            'fbm_duplicate_exclusion': {
+                'enabled': False,
+                'excluded_count': 0,
+                'excluded_skus_sample': [],
+                'reason': (
+                    'Deprecated title-only FBA/FBM filtering is disabled because '
+                    'matching titles do not prove record equivalence.'
+                ),
+                'strategy': 'No title-only exclusions.',
+            },
+        }
     
     def _filter_fbm_duplicates(self, listings: List[Listing]) -> List[Listing]:
         """
-        Filter out FBM/MFN duplicates of FBA listings.
-        When multiple SKUs have the same item name (title), keep the FBA version.
-        """
-        seen_names = {}
-        filtered = []
-        skipped_count = 0
-        skipped_skus = []
-        
-        for listing in listings:
-            # Use title as the unique identifier (item name)
-            item_name = listing.title.strip() if listing.title else ""
-            
-            if not item_name:
-                # No title, can't detect duplicates - keep it
-                filtered.append(listing)
-                continue
-            
-            if item_name in seen_names:
-                # Duplicate found
-                existing_sku = seen_names[item_name]
-                
-                # If this one is FBA, replace the existing one
-                if "_FBA_" in listing.sku.upper() or "FBA" in listing.sku.upper():
-                    # Remove the old one, add this FBA version
-                    skipped_skus.append(existing_sku)
-                    skipped_count += 1
-                    filtered = [l for l in filtered if l.sku != existing_sku]
-                    filtered.append(listing)
-                    seen_names[item_name] = listing.sku
-                else:
-                    # This is FBM/MFN, skip it
-                    skipped_skus.append(listing.sku)
-                    skipped_count += 1
-                    continue
-            else:
-                # First time seeing this item name
-                seen_names[item_name] = listing.sku
-                filtered.append(listing)
-        
-        if skipped_count > 0 and not _quiet:
-            import sys
-            print(f"Skipped {skipped_count} FBM/MFN duplicates (keeping FBA versions)", file=sys.stderr)
+        Consolidate exact-SKU duplicate rows for backwards compatibility.
 
-        self._listing_filter_metadata = {
-            "fbm_duplicate_exclusion": {
-                "enabled": True,
-                "excluded_count": skipped_count,
-                "excluded_skus_sample": skipped_skus[:25],
-                "reason": (
-                    "When multiple rows appear to represent the same listing, "
-                    "FBM/MFN duplicate rows are excluded so issue counts focus "
-                    "on the retained FBA/listable SKU."
+        The former implementation excluded distinct SKUs based on matching title.
+        Titles are not stable identity keys, so distinct SKUs are always preserved.
+        """
+        grouped: Dict[str, List[Listing]] = {}
+        group_order = []
+        for listing in listings:
+            key = self._normalized(listing.sku)
+            if key not in grouped:
+                group_order.append(key)
+            grouped.setdefault(key, []).append(listing)
+
+        filtered = []
+        skipped_rows = []
+        for key in group_order:
+            group = grouped[key]
+            representative = max(
+                group,
+                key=lambda listing: sum(
+                    bool(str(value or '').strip())
+                    for value in listing.all_fields.values()
                 ),
-                "strategy": (
-                    "Title-based duplicate detection; when duplicate titles are "
-                    "found, prefer SKUs containing FBA and exclude non-FBA rows."
-                ),
-            }
-        }
-        
+            )
+            filtered.append(representative)
+            skipped_rows.extend(
+                listing.row_number for listing in group if listing is not representative
+            )
+
+        record_metadata = self._listing_filter_metadata['record_equivalence']
+        record_metadata['analysis_listing_count'] = len(filtered)
+        record_metadata['exact_sku_rows_consolidated'] = len(skipped_rows)
+        record_metadata['consolidated_row_numbers'] = skipped_rows[:25]
         return filtered
+
+    def is_removed_or_delete_listing(self, listing: Listing) -> bool:
+        """Return True for rows that should not receive active content-gap findings."""
+        status = self._normalized(listing.status)
+        action = self._normalized(
+            self._get_named_field(listing, 'Listing Action', 'Update Delete')
+        )
+        return status in {'removed', 'deleted'} or action in {'delete', 'removed'}
+
+    def alternate_record_with_value(
+        self, listing: Listing, field: str
+    ) -> Optional[Dict]:
+        """Describe a stronger record containing a value missing on this row."""
+        candidates = getattr(self, '_unfiltered_listings', []) or []
+        listing_sku = self._normalized(listing.sku)
+        listing_asin = self._explicit_asin(listing)
+
+        exact_sku_matches = [
+            candidate
+            for candidate in candidates
+            if candidate.row_number != listing.row_number
+            and self._normalized(candidate.sku) == listing_sku
+            and str(candidate.all_fields.get(field) or '').strip()
+        ]
+        if exact_sku_matches:
+            return {
+                'match_type': 'exact_sku_duplicate',
+                'rows': [candidate.row_number for candidate in exact_sku_matches],
+                'skus': sorted({candidate.sku for candidate in exact_sku_matches}),
+            }
+
+        if listing_asin:
+            shared_asin_matches = [
+                candidate
+                for candidate in candidates
+                if candidate.row_number != listing.row_number
+                and self._normalized(candidate.sku) != listing_sku
+                and self._explicit_asin(candidate) == listing_asin
+                and str(candidate.all_fields.get(field) or '').strip()
+            ]
+            if shared_asin_matches:
+                return {
+                    'match_type': 'shared_asin_review',
+                    'asin': listing_asin,
+                    'rows': [candidate.row_number for candidate in shared_asin_matches],
+                    'skus': sorted({candidate.sku for candidate in shared_asin_matches}),
+                }
+        return None
+
+    def record_copy_aware_blank_review(
+        self, listing: Listing, field: str, alternate: Dict
+    ) -> None:
+        """Expose suppressed blanks as review metadata instead of hiding them."""
+        review = {
+            'row': listing.row_number,
+            'sku': listing.sku,
+            'field': field,
+            **alternate,
+        }
+        if review not in self._copy_aware_blank_reviews:
+            self._copy_aware_blank_reviews.append(review)
     
     def get_product_types(self) -> List[str]:
         """Get unique product types in catalog"""

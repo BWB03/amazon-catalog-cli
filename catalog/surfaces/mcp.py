@@ -89,7 +89,8 @@ def catalog_scan(
         fields: Field mask - only return these fields in issues (e.g. ["sku", "severity", "details"])
         limit: Max issues to return per query (default: 50)
         offset: Skip first N issues per query (default: 0)
-        exclude_fbm: Exclude FBM/MFN duplicates, keep FBA (default: true)
+        exclude_fbm: Legacy switch that consolidates exact-SKU repeated rows.
+            Distinct SKUs are never excluded by title alone (default: true).
 
     Returns:
         JSON string with scan results including issues grouped by query
@@ -132,7 +133,8 @@ def catalog_scan_summary(
     Args:
         file: Path to CLR file (.xlsx or .xlsm)
         queries: Query names to run (omit for all queries)
-        exclude_fbm: Exclude FBM/MFN duplicates, keep FBA (default: true)
+        exclude_fbm: Legacy switch that consolidates exact-SKU repeated rows.
+            Distinct SKUs are never excluded by title alone (default: true).
 
     Returns:
         JSON summary with per-query issue counts and affected SKU counts
@@ -192,7 +194,8 @@ def catalog_check(
         fields: Field mask - only return these fields in issues
         limit: Max issues to return (default: 50)
         offset: Skip first N issues (default: 0)
-        exclude_fbm: Exclude FBM/MFN duplicates (default: true)
+        exclude_fbm: Legacy switch that consolidates exact-SKU repeated rows.
+            Distinct SKUs are never excluded by title alone (default: true).
 
     Returns:
         JSON string with query results

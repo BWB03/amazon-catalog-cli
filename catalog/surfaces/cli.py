@@ -50,7 +50,7 @@ def cli():
 @click.option('--show-details/--no-details', default=False,
               help='Show detailed results (default: summary only)')
 @click.option('--include-fbm-duplicates', is_flag=True, default=False,
-              help='Include FBM/MFN duplicates (default: skip them)')
+              help='Legacy: include repeated exact-SKU rows (distinct SKUs are always preserved)')
 @click.option('--json', 'json_input', type=str, default=None,
               help='JSON request body (agent-friendly input)')
 @click.option('--stdin', 'use_stdin', is_flag=True, default=False,
@@ -107,7 +107,7 @@ def scan(clr_file, output_format, output_path, show_details, include_fbm_duplica
 @click.option('--output', 'output_path', type=click.Path(), help='Output file path')
 @click.option('--show-details/--no-details', default=True, help='Show detailed results')
 @click.option('--include-fbm-duplicates', is_flag=True, default=False,
-              help='Include FBM/MFN duplicates (default: skip them)')
+              help='Legacy: include repeated exact-SKU rows (distinct SKUs are always preserved)')
 @click.option('--json', 'json_input', type=str, default=None,
               help='JSON request body (agent-friendly input)')
 @click.option('--stdin', 'use_stdin', is_flag=True, default=False,
