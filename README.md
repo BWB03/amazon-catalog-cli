@@ -226,6 +226,19 @@ Options:
   --stdin                   Read JSON request from stdin
 ```
 
+### `catalog listing monitor`
+
+Compare Seller Central’s US listing title, brand, description, and bullet points against an explicit CLR baseline. The monitor fetches each ASIN once and compares every matching non-parent SKU row, including FBA and FBM rows. It uses Amazon field IDs to preserve bullet positions when CLR headers repeat.
+
+```bash
+catalog listing monitor my-catalog.xlsx --cookie-file /path/to/local/session --output discrepancies.json
+catalog listing monitor --catalog-id <uploaded-catalog-uuid> --asin B000TEST01 --output discrepancies.json
+```
+
+For an uploaded CLR, set `CATALOG_API_KEY` locally. This mode requires the catalog source endpoint on the private hosted API. Set `CATALOG_SELLER_CENTRAL_COOKIE` locally or supply `--cookie-file` to authenticate the live lookup. Run the same command from a local scheduler to check against the same baseline again. Change the catalog ID or file when you want to adopt a new baseline.
+
+JSON includes the baseline, run time, both values for each discrepancy, and fields Amazon did not return. It also lists CLR rows without an explicit ASIN, requested ASINs missing from the CLR, and failed or skipped lookups. Exit code 0 means all requested lookups completed, even if discrepancies were found. Exit code 1 indicates an incomplete or failed run.
+
 ### `catalog schema`
 Show schema for queries, params, and response shapes.
 

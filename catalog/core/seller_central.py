@@ -59,11 +59,11 @@ def resolve_cookie(cookie: str | None = None, cookie_file: str | None = None) ->
 def _http_get(url: str, cookie: str, timeout: float) -> HttpResult:
     headers = {
         "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Cookie": cookie,
         "User-Agent": "CatalogCLI/2.2 SellerCentralLookup",
         "X-Requested-With": "XMLHttpRequest",
     }
     request = Request(url, headers=headers, method="GET")
+    request.add_unredirected_header("Cookie", cookie)
 
     try:
         with urlopen(request, timeout=timeout) as response:
