@@ -176,6 +176,35 @@ class SellerListingDiffResponse(BaseModel):
     error: str | None = None
 
 
+class SellerListingDiscrepancy(BaseModel):
+    field: str
+    clr_value: str | None
+    amazon_value: str | None
+
+
+class SellerListingMonitorRow(BaseModel):
+    asin: str
+    sku: str
+    row: int
+    compared_fields: int = 0
+    discrepancies: list[SellerListingDiscrepancy] = Field(default_factory=list)
+    unavailable_fields: list[str] = Field(default_factory=list)
+
+
+class SellerListingMonitorResponse(BaseModel):
+    baseline: str
+    catalog_id: str | None = None
+    checked_at: str
+    marketplace: str
+    status: Literal["complete", "partial", "failed"]
+    report_rows: int = 0
+    rows_without_asin: list[str] = Field(default_factory=list)
+    unmatched_asins: list[str] = Field(default_factory=list)
+    unchecked_asins: dict[str, str] = Field(default_factory=dict)
+    error: str | None = None
+    results: list[SellerListingMonitorRow] = Field(default_factory=list)
+
+
 class QueryInfo(BaseModel):
     """Metadata about an available query."""
     name: str

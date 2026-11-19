@@ -4,13 +4,18 @@ Agent-first redesign with --json input, schema introspection, and field masks.
 Backward compatible with all v1.x commands.
 """
 
-import sys
 import json as json_mod
+import os
+import sys
+from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from zipfile import BadZipFile
 
 import click
 from rich.console import Console
 
 from catalog.core.engine import execute_scan, execute_check, list_queries, get_schema
+from catalog.core.listing_monitor import download_catalog_source, monitor_seller_listings
 from catalog.core.models import (
     CheckRequest,
     ScanRequest,
@@ -18,7 +23,7 @@ from catalog.core.models import (
     SellerListingFetchRequest,
 )
 from catalog.core.seller_central import diff_seller_listing, fetch_seller_listing
-from catalog.core.validation import ValidationError
+from catalog.core.validation import ValidationError, validate_asin
 from catalog.output import format_terminal, format_json, format_csv, format_ndjson, print_summary
 
 console = Console()
@@ -305,6 +310,60 @@ def listing_diff(asin, clr_file, sku, output_format, output_path, cookie, cookie
         fmt = output_format or _default_listing_format()
         _error_output(str(e), fmt)
         raise SystemExit(1)
+
+
+@listing.command("monitor")
+@click.argument("clr_file", required=False, type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--catalog-id", type=click.UUID, help="Use a CLR uploaded to Catalog CLI Pro")
+@click.option("--asin", "asins", multiple=True, help="Restrict to an ASIN. Repeat for multiple ASINs.")
+@click.option("--cookie-file", type=click.Path(exists=True, dir_okay=False), help="Local Seller Central cookie file")
+@click.option("--timeout", type=click.FloatRange(0, 120, min_open=True), default=20.0, help="Timeout per ASIN in seconds")
+@click.option("--output", type=click.Path(dir_okay=False, path_type=Path), help="Save JSON results to this file")
+def listing_monitor(clr_file, catalog_id, asins, cookie_file, timeout, output):
+    """Check live Seller Central copy against a local or uploaded CLR."""
+    if (clr_file is None) == (catalog_id is None):
+        raise click.UsageError("Provide a CLR_FILE or --catalog-id.")
+    if output and any(
+        source and Path(source).resolve() == output.resolve() for source in (clr_file, cookie_file)
+    ):
+        raise click.UsageError("Choose an output path different from the CLR and cookie files.")
+
+    try:
+        options = {"asins": tuple(map(validate_asin, asins)), "cookie_file": cookie_file, "timeout": timeout}
+        if catalog_id:
+            key = os.environ.get("CATALOG_API_KEY", "").strip()
+            if not key:
+                raise ValidationError("Set CATALOG_API_KEY to use an uploaded Catalog CLI Pro CLR.")
+            filename, data = download_catalog_source(catalog_id, key)
+            with TemporaryDirectory(prefix="catalog-clr-") as directory:
+                path = Path(directory) / "baseline.xlsx"
+                path.write_bytes(data)
+                report = monitor_seller_listings(
+                    str(path), baseline=filename, catalog_id=str(catalog_id), **options,
+                )
+        else:
+            report = monitor_seller_listings(str(clr_file), baseline=clr_file.name, **options)
+
+        payload = report.model_dump_json(indent=2) + "\n"
+        if output:
+            temp_path = None
+            try:
+                with NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent, delete=False) as file:
+                    temp_path = Path(file.name)
+                    file.write(payload)
+                temp_path.replace(output)
+            finally:
+                if temp_path:
+                    temp_path.unlink(missing_ok=True)
+        else:
+            click.echo(payload, nl=False)
+    except (ValueError, OSError, BadZipFile) as exc:
+        raise click.ClickException(str(exc)) from None
+
+    if report.status != "complete":
+        if output:
+            click.echo(report.error or f"Monitor run was {report.status}. See {output}.", err=True)
+        raise click.exceptions.Exit(1)
 
 
 @cli.command()
