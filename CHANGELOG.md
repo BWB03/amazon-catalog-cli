@@ -6,6 +6,18 @@ All notable changes to Catalog CLI will be documented in this file.
 
 ---
 
+## [2.4.0]
+
+### Added
+- Remote MCP over Streamable HTTP at `/mcp`, with Catalog CLI API key authentication and shared REST quotas.
+- Hosted tools for HTTPS CLR imports, signed R2 uploads, paginated audits, and saved scan history.
+
+### Changed
+- `catalog setup-claude --pro` configures Streamable HTTP.
+- Free accounts default to one catalog and can read saved results for seven days.
+
+---
+
 ## [2.3.0] - 2026-07-05
 
 ### Added
