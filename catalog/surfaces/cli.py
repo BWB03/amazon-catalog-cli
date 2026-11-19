@@ -6,10 +6,13 @@ Backward compatible with all v1.x commands.
 
 import sys
 import json as json_mod
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import click
 from rich.console import Console
 
+from catalog import __version__
 from catalog.core.engine import execute_scan, execute_check, list_queries, get_schema
 from catalog.core.models import (
     CheckRequest,
@@ -36,7 +39,7 @@ def _parse_json_input(json_str: str | None, stdin: bool) -> dict | None:
 
 
 @click.group()
-@click.version_option(version="2.3.0")
+@click.version_option(version=__version__)
 def cli():
     """Catalog CLI - Agent-native Amazon catalog auditing tool"""
     pass
@@ -331,8 +334,6 @@ def setup_claude(pro, api_key, project, dry_run):
       catalog setup-claude          Local MCP (free, data stays on your machine)
       catalog setup-claude --pro    Hosted API MCP (Pro, persistent storage + unlimited scans)
     """
-    from pathlib import Path
-
     if pro and not api_key:
         raise click.UsageError("--api-key is required with --pro. Get one at https://api.catalogcli.com/docs")
 
@@ -340,8 +341,9 @@ def setup_claude(pro, api_key, project, dry_run):
     if pro:
         server_name = "catalog-pro"
         mcp_config = {
-            "url": "https://api.catalogcli.com/mcp/sse",
-            "headers": {"X-API-Key": api_key},
+            "type": "http",
+            "url": "https://api.catalogcli.com/mcp",
+            "headers": {"Authorization": f"Bearer {api_key}"},
         }
     else:
         server_name = "catalog"
@@ -353,6 +355,8 @@ def setup_claude(pro, api_key, project, dry_run):
     # Determine config file path
     if project:
         config_path = Path.cwd() / ".mcp.json"
+    elif pro:
+        config_path = Path.home() / ".claude.json"
     else:
         config_path = Path.home() / ".claude" / "settings.json"
 
@@ -360,10 +364,15 @@ def setup_claude(pro, api_key, project, dry_run):
     if config_path.exists():
         try:
             config = json_mod.loads(config_path.read_text())
-        except (json_mod.JSONDecodeError, OSError):
+        except (json_mod.JSONDecodeError, OSError) as exc:
+            if pro:
+                raise click.ClickException(f"Could not read the existing Claude config at {config_path}.") from exc
             config = {}
     else:
         config = {}
+
+    if pro and (not isinstance(config, dict) or not isinstance(config.get("mcpServers", {}), dict)):
+        raise click.ClickException(f"Invalid Claude MCP configuration at {config_path}.")
 
     # Check if already configured
     existing = config.get("mcpServers", {}).get(server_name)
@@ -378,12 +387,24 @@ def setup_claude(pro, api_key, project, dry_run):
 
     if dry_run:
         console.print(f"[bold]Would write to:[/bold] {config_path}\n")
-        console.print(json_mod.dumps(config, indent=2))
+        preview = {**mcp_config, "headers": {"Authorization": "Bearer [redacted]"}} if pro else mcp_config
+        click.echo(json_mod.dumps({"mcpServers": {server_name: preview}}, indent=2))
         return
 
     # Write config
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(json_mod.dumps(config, indent=2) + "\n")
+    config_text = json_mod.dumps(config, indent=2) + "\n"
+    if pro:
+        with NamedTemporaryFile(mode="w", encoding="utf-8", dir=config_path.parent, delete=False) as file:
+            temp_path = Path(file.name)
+            try:
+                file.write(config_text)
+                file.close()
+                temp_path.replace(config_path)
+            finally:
+                temp_path.unlink(missing_ok=True)
+    else:
+        config_path.write_text(config_text)
 
     mode = "Pro (hosted API)" if pro else "Local (free)"
     console.print(f"\n[green]Configured Claude Code MCP server ({mode})[/green]")

@@ -269,6 +269,40 @@ catalog setup-claude --project
 
 After setup, restart Claude Code and try: *"Scan my-catalog.xlsx and tell me the biggest issues"*
 
+## Remote MCP
+
+In Town or another cloud MCP client, select **Streamable HTTP**, enter
+`https://api.catalogcli.com/mcp`, and send `Authorization: Bearer YOUR_CATALOG_API_KEY`
+on every request. `X-API-Key: YOUR_CATALOG_API_KEY` also works. Create a key through
+the [Catalog CLI signup page](https://catalogcli.com/signup.html) or `POST /v1/auth/register`.
+
+```bash
+claude mcp add --transport http catalog-cli https://api.catalogcli.com/mcp \
+  --header "Authorization: Bearer $CATALOG_API_KEY"
+```
+
+| Tools | Purpose |
+| --- | --- |
+| `catalog_list`, `catalog_delete` | List or delete catalogs in your account |
+| `catalog_import_from_url` | Import a CLR from a public HTTPS download URL |
+| `catalog_create_upload_url`, `catalog_finalize_upload` | PUT a workbook directly to R2, then register it |
+| `catalog_scan_summary`, `catalog_scan`, `catalog_check` | Run and save an audit using a catalog ID |
+| `catalog_scan_history`, `catalog_get_scan` | Find saved scans and read issues without using scan quota |
+| `catalog_list_queries`, `catalog_schema` | Discover checks and their result fields |
+
+For a direct upload, pass the filename and exact `size_bytes` to `catalog_create_upload_url`.
+PUT the raw file to the returned URL with the returned `Content-Length` within 10 minutes.
+Then call `catalog_finalize_upload` with the returned `catalog_id`. If you abandon an upload,
+use `catalog_delete` to free its catalog slot. For a public HTTPS download, call
+`catalog_import_from_url` and supply `filename` if the link does not end in `.xlsx` or `.xlsm`.
+Both accept workbooks up to 50 MiB. Existing catalogs uploaded through `POST /v1/catalogs`
+are also available to Remote MCP.
+
+Start with `catalog_scan_summary`, then pass its `scan_id` to `catalog_get_scan`
+to see saved issues. Results default to 50 issues per query. Use `offset`, `limit`,
+and `fields` to page or narrow issue details. API quotas, rate limits, and result
+retention apply across REST and Remote MCP. The local stdio server still runs via `catalog mcp`.
+
 ## Example JSON Output
 
 ```json
@@ -396,7 +430,7 @@ class MyCustomQuery(QueryPlugin):
 | Results persistence | — | 7 days | Permanent |
 | API access | — | Yes | Yes |
 | Rate limit | — | 10 req/min | 100 req/min |
-| Claude Code integration | Local MCP | — | Hosted MCP |
+| Claude Code integration | Local MCP | Hosted MCP | Hosted MCP |
 | Variation Creator | — | — | Coming soon |
 
 **[Get started at catalogcli.com](https://catalogcli.com)** | **[API Docs](https://api.catalogcli.com/docs)**
