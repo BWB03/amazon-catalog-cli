@@ -4,6 +4,7 @@ from click.testing import CliRunner
 from catalog.surfaces.cli import cli
 from catalog.core.models import SellerListingDiffResponse, SellerListingFetchResponse
 import json
+from pathlib import Path
 
 
 runner = CliRunner()
@@ -13,7 +14,7 @@ class TestCLIBasics:
     def test_version(self):
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "2.3" in result.output
+        assert "2.4.0" in result.output
 
     def test_help(self):
         result = runner.invoke(cli, ["--help"])
@@ -32,6 +33,30 @@ class TestCLIBasics:
         assert "--fields" in result.output
         assert "--limit" in result.output
         assert "ndjson" in result.output
+
+    def test_setup_claude_pro_writes_http_type(self):
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                cli,
+                ["setup-claude", "--pro", "--api-key", "cat_live_test", "--project"],
+            )
+
+            assert result.exit_code == 0
+            with open(".mcp.json") as f:
+                config = json.load(f)
+
+            server = config["mcpServers"]["catalog-pro"]
+            assert server["type"] == "http"
+            assert server["url"] == "https://api.catalogcli.com/mcp"
+            assert server["headers"] == {"Authorization": "Bearer cat_live_test"}
+
+    def test_setup_claude_pro_preserves_invalid_config(self):
+        with runner.isolated_filesystem():
+            config = Path(".mcp.json")
+            config.write_text("{invalid")
+            result = runner.invoke(cli, ["setup-claude", "--pro", "--api-key", "cat_live_test", "--project"])
+            assert result.exit_code == 1
+            assert config.read_text() == "{invalid"
 
     def test_listing_fetch_json(self, monkeypatch):
         def fake_fetch(request):
